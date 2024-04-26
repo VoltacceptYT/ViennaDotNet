@@ -13,7 +13,7 @@ namespace ViennaDotNet.Buildplate.Connector.Model
     {
         public record Inventory(
             Inventory.Item[] items,
-            Inventory.HotbarItem[] hotbar
+            Inventory.HotbarItem?[] hotbar
         )
         {
             public record Item(

@@ -27,9 +27,9 @@ namespace ViennaDotNet.Buildplate.Launcher
 {
     public class Instance
     {
-        public static Instance run(EarthDB earthDB, ObjectStoreClient objectStoreClient, EventBusClient eventBusClient, string playerId, string buildplateId, string instanceId, bool survival, bool night, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionstring, string apiServerAddress, string apiServerToken)
+        public static Instance run(EventBusClient eventBusClient, string playerId, string buildplateId, string instanceId, bool survival, bool night, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionstring)
         {
-            Instance instance = new Instance(earthDB, objectStoreClient, eventBusClient, playerId, buildplateId, instanceId, survival, night, publicAddress, port, serverInternalPort, javaCmd, fountainBridgeJar, serverTemplateDir, fabricJarName, connectorPluginJar, baseDir, eventBusConnectionstring, apiServerAddress, apiServerToken);
+            Instance instance = new Instance(eventBusClient, playerId, buildplateId, instanceId, survival, night, publicAddress, port, serverInternalPort, javaCmd, fountainBridgeJar, serverTemplateDir, fabricJarName, connectorPluginJar, baseDir, eventBusConnectionstring);
             new Thread(instance.run)
             {
                 Name = $"Instance {instanceId}"
@@ -37,8 +37,6 @@ namespace ViennaDotNet.Buildplate.Launcher
             return instance;
         }
 
-        private readonly EarthDB earthDB;
-        private readonly ObjectStoreClient objectStoreClient;
         private readonly EventBusClient eventBusClient;
 
         private readonly string playerId;
@@ -58,17 +56,15 @@ namespace ViennaDotNet.Buildplate.Launcher
         private readonly FileInfo connectorPluginJar;
         private readonly DirectoryInfo baseDir;
         private readonly string eventBusConnectionString;
-        private readonly string apiServerAddress;
-        private readonly string apiServerToken;
 
         private Thread thread;
         private readonly TaskCompletionSource readyFuture = new TaskCompletionSource();
 
+        private RequestSender? requestSender = null;
+
         private readonly string eventBusQueueName;
         private Subscriber? subscriber = null;
         private RequestHandler? requestHandler = null;
-
-        private readonly HttpClient okHttpClient;
 
         private DirectoryInfo? serverWorkDir;
         private DirectoryInfo? bridgeWorkDir;
@@ -77,10 +73,8 @@ namespace ViennaDotNet.Buildplate.Launcher
         private bool shuttingDown = false;
         private readonly object subprocessLock = new object();
 
-        private Instance(EarthDB earthDB, ObjectStoreClient objectStoreClient, EventBusClient eventBusClient, string playerId, string buildplateId, string instanceId, bool survival, bool night, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionstring, string apiServerAddress, string apiServerToken)
+        private Instance(EventBusClient eventBusClient, string playerId, string buildplateId, string instanceId, bool survival, bool night, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionstring)
         {
-            this.earthDB = earthDB;
-            this.objectStoreClient = objectStoreClient;
             this.eventBusClient = eventBusClient;
 
             this.playerId = playerId;
@@ -100,17 +94,8 @@ namespace ViennaDotNet.Buildplate.Launcher
             this.connectorPluginJar = connectorPluginJar;
             this.baseDir = baseDir;
             this.eventBusConnectionString = eventBusConnectionstring;
-            this.apiServerAddress = apiServerAddress;
-            this.apiServerToken = apiServerToken;
 
             this.eventBusQueueName = "buildplate_" + this.instanceId;
-
-            okHttpClient = new HttpClient();
-            //    okHttpClient = new OkHttpClient.Builder().addInterceptor(chain->
-
-            //{
-            //        return chain.proceed(chain.request().newBuilder().addHeader("Vienna-Buildplate-Instance-Token", apiServerToken).build());
-            //    }).build();
         }
 
         private void run()
@@ -119,41 +104,35 @@ namespace ViennaDotNet.Buildplate.Launcher
 
             try
             {
-                Log.Information("Starting for buildplate {buildplateId} player {playerId}");
-                Log.Information("Using port {port} internal port {serverInternalPort}");
+                Log.Information($"Starting for buildplate {buildplateId} player {playerId}");
+                Log.Information($"Using port {port} internal port {serverInternalPort}");
+
+                requestSender = eventBusClient.addRequestSender();
 
                 Log.Information("Setting up server");
 
-                Buildplates.Buildplate? buildplate;
+                BuildplateLoadResponse? buildplateLoadResponse = sendEventBusRequestRaw<BuildplateLoadResponse>("load", new BuildplateLoadRequest(playerId, buildplateId), true).Result;
+                if (buildplateLoadResponse == null)
+                {
+                    Log.Error($"Could not load buildplate information for buildplate {buildplateId} player {playerId}");
+                    return;
+                }
+
+                byte[] serverData;
                 try
                 {
-                    Buildplates buildplates = (Buildplates)new EarthDB.Query(false)
-                        .Get("buildplates", playerId, typeof(Buildplates))
-                        .Execute(earthDB)
-                        .Get("buildplates").Value;
-                    buildplate = buildplates.getBuildplate(buildplateId);
+                    serverData = Convert.FromBase64String(buildplateLoadResponse.serverDataBase64);
                 }
-                catch (EarthDB.DatabaseException exception)
+                catch
                 {
-                    Log.Error($"Could not load buildplate information: {exception}");
-                    return;
-                }
-                if (buildplate is null)
-                {
-                    Log.Error($"Buildplate {buildplateId} does not exist for player {playerId}");
-                    return;
-                }
-                byte[]? serverData = (byte[]?)objectStoreClient.get(buildplate.serverDataObjectId).Task.Result;
-                if (serverData is null)
-                {
-                    Log.Error($"Server data object {buildplate.serverDataObjectId} for buildplate {buildplateId} could not be loaded from object store");
+                    Log.Error("Buildplate load response contained invalid base64 data");
                     return;
                 }
 
                 try
                 {
 
-                    serverWorkDir = setupServerFiles(buildplate, serverData);
+                    serverWorkDir = setupServerFiles(serverData);
                     if (serverWorkDir == null)
                     {
                         Log.Error("Could not set up files for server");
@@ -167,7 +146,7 @@ namespace ViennaDotNet.Buildplate.Launcher
                 }
                 try
                 {
-                    bridgeWorkDir = setupBridgeFiles(buildplate, serverData);
+                    bridgeWorkDir = setupBridgeFiles(serverData);
                     if (bridgeWorkDir == null)
                     {
                         Log.Error("Could not set up files for bridge");
@@ -194,7 +173,7 @@ namespace ViennaDotNet.Buildplate.Launcher
                 requestHandler = eventBusClient.addRequestHandler(eventBusQueueName, new RequestHandler.Handler(
                     request =>
                     {
-                        object responseObject = handleConnectorRequest(request);
+                        object? responseObject = handleConnectorRequest(request);
                         if (responseObject != null)
                             return JsonConvert.SerializeObject(responseObject);
                         else
@@ -273,7 +252,7 @@ namespace ViennaDotNet.Buildplate.Launcher
                         if (worldSavedMessage != null)
                         {
                             Log.Information("Saving snapshot");
-                            sendApiServerRequest<object>($"/buildplate/snapshot/{playerId}/{buildplateId}", worldSavedMessage.dataBase64, false/*null*/);
+                            sendEventBusRequest<object>("saved", worldSavedMessage, false);
                         }
                     }
                     break;
@@ -281,28 +260,28 @@ namespace ViennaDotNet.Buildplate.Launcher
                     {
                         InventoryAddItemMessage? inventoryAddItemMessage = readJson<InventoryAddItemMessage>(@event.data);
                         if (inventoryAddItemMessage != null)
-                            sendApiServerRequest<object>($"/buildplate/inventory/{instanceId}/{inventoryAddItemMessage.playerId}/add", inventoryAddItemMessage, false/*, null*/);
+                            sendEventBusRequest<object>("inventoryAdd", inventoryAddItemMessage, false);
                     }
                     break;
                 case "inventoryRemove":
                     {
                         InventoryRemoveItemMessage? inventoryRemoveItemMessage = readJson<InventoryRemoveItemMessage>(@event.data);
                         if (inventoryRemoveItemMessage != null)
-                            sendApiServerRequest<object>($"/buildplate/inventory/{instanceId}/{inventoryRemoveItemMessage.playerId}/remove", inventoryRemoveItemMessage, false/*, null*/);
+                            sendEventBusRequest<object>("inventoryRemove", inventoryRemoveItemMessage, false);
                     }
                     break;
                 case "inventoryUpdateWear":
                     {
                         InventoryUpdateItemWearMessage? inventoryUpdateItemWearMessage = readJson<InventoryUpdateItemWearMessage>(@event.data);
                         if (inventoryUpdateItemWearMessage != null)
-                            sendApiServerRequest<object>($"/buildplate/inventory/{instanceId}/{inventoryUpdateItemWearMessage.playerId}/updateWear", inventoryUpdateItemWearMessage, false/*, null*/);
+                            sendEventBusRequest<object>("inventoryUpdateWear", inventoryUpdateItemWearMessage, false);
                     }
                     break;
                 case "inventorySetHotbar":
                     {
                         InventorySetHotbarMessage? inventorySetHotbarMessage = readJson<InventorySetHotbarMessage>(@event.data);
                         if (inventorySetHotbarMessage != null)
-                            sendApiServerRequest<object>($"/buildplate/inventory/{instanceId}/{inventorySetHotbarMessage.playerId}/hotbar", inventorySetHotbarMessage, false/*, null*/);
+                            sendEventBusRequest<object>("inventorySetHotbar", inventorySetHotbarMessage, false);
                     }
                     break;
             }
@@ -319,18 +298,15 @@ namespace ViennaDotNet.Buildplate.Launcher
                         {
                             if (playerConnectedRequest.uuid == playerId)    // TODO: probably remove this eventually and put in API server
                             {
-                                PlayerConnectedResponse? playerConnectedResponse = sendApiServerRequest<PlayerConnectedResponse>($"/buildplate/join/{instanceId}", playerConnectedRequest, true);
+                                PlayerConnectedResponse? playerConnectedResponse = sendEventBusRequest<PlayerConnectedResponse>("playerConnected", playerConnectedRequest, true).Result;
                                 if (playerConnectedResponse != null)
                                 {
-                                    Log.Information("Player {} has connected", playerConnectedRequest.uuid);
+                                    Log.Information($"Player {playerConnectedRequest.uuid} has connected");
                                     return playerConnectedResponse;
                                 }
                             }
-
                             else
-                            {
                                 return new PlayerConnectedResponse(false, null);
-                            }
                         }
                     }
                     break;
@@ -339,7 +315,7 @@ namespace ViennaDotNet.Buildplate.Launcher
                         PlayerDisconnectedRequest? playerDisconnectedRequest = readJson<PlayerDisconnectedRequest>(request.data);
                         if (playerDisconnectedRequest != null)
                         {
-                            PlayerDisconnectedResponse? playerDisconnectedResponse = sendApiServerRequest<PlayerDisconnectedResponse>($"/buildplate/leave/{instanceId}/{playerDisconnectedRequest.playerId}", playerDisconnectedRequest, true);
+                            PlayerDisconnectedResponse? playerDisconnectedResponse = sendEventBusRequest<PlayerDisconnectedResponse>("playerDisconnected", playerDisconnectedRequest, true).Result;
                             if (playerDisconnectedResponse != null)
                             {
                                 Log.Information($"Player {playerDisconnectedRequest.playerId} has disconnected");
@@ -347,10 +323,7 @@ namespace ViennaDotNet.Buildplate.Launcher
                                 if (playerDisconnectedRequest.playerId == playerId)
                                 {
                                     Log.Information("Host player has disconnected, beginning shutdown");
-                                    new Thread(() =>
-                                    {
-                                        beginShutdown();
-                                    }).Start();
+                                    beginShutdown();
                                 }
 
                                 return playerDisconnectedResponse;
@@ -376,50 +349,69 @@ namespace ViennaDotNet.Buildplate.Launcher
             }
         }
 
-        private T? sendApiServerRequest<T>(string path, object? obj, bool returnResponse/*, Type? responseClass*/)
+        record RequestWithBuildplateIds(
+            string playerId,
+            string buildplateId,
+            string instanceId,
+            object request
+        )
         {
-            return sendApiServerRequest<T>(path, JsonConvert.SerializeObject(obj), returnResponse/*, responseClass*/);
         }
-
-        private T? sendApiServerRequest<T>(string path, string str, bool returnResponse/*, Type? responseClass*/)
+        private async Task<T?> sendEventBusRequest<T>(string type, object obj, bool returnResponse)
         {
-            // TODO: why + "/" +, when the path starts with / ??? remove?
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, apiServerAddress + "/" + path);
-            request.Content = new StringContent(str, Encoding.UTF8);
+            RequestWithBuildplateIds request = new RequestWithBuildplateIds(playerId, buildplateId, instanceId, obj);
 
-            request.Headers.Add("Vienna-Buildplate-Instance-Token", apiServerToken);
-
-            //RequestBody requestBody = RequestBody.create(string.getBytes(StandardCharsets.UTF_8));
-            //Call call = okHttpClient.newCall(new okhttp3.Request.Builder().url("%s/%s".formatted(apiServerAddress, path)).post(requestBody).build());
             try
             {
-                HttpResponseMessage response = okHttpClient.Send(request);
-                HttpContent responseBody = response.Content;
-                if (responseBody == null || response.StatusCode != HttpStatusCode.OK)
+                var response = await requestSender!.request("buildplates", type, JsonConvert.SerializeObject(request)).Task;
+
+                if (response == null)
                 {
-                    Log.Error($"API server request failed {path} (code {response.StatusCode})");
+                    Log.Error("Event bus request failed (no response)");
                     beginShutdown();
                     return default;
                 }
+
                 if (returnResponse)
-                    return JsonConvert.DeserializeObject<T>(responseBody.ReadAsStringAsync().Result);
+                    return JsonConvert.DeserializeObject<T>(response);
                 else
                     return default;
-                //if (responseClass != null)
-                //    return JsonConvert.DeserializeObject(responseBody.ReadAsStringAsync().Result, responseClass);
-                //else
-                //    return default;
             }
-
             catch (Exception exception)
             {
-                Log.Error($"API server request failed {path}: {exception}");
+                Log.Error("Event bus request failed", exception);
                 beginShutdown();
                 return default;
             }
         }
 
-        private DirectoryInfo? setupServerFiles(Buildplates.Buildplate buildplate, byte[] serverData)
+        private async Task<T?> sendEventBusRequestRaw<T>(string type, object obj, bool returnResponse)
+        {
+            try
+            {
+                var response = await requestSender!.request("buildplates", type, JsonConvert.SerializeObject(obj)).Task;
+
+                if (response == null)
+                {
+                    Log.Error("Event bus request failed (no response)");
+                    beginShutdown();
+                    return default;
+                }
+
+                if (returnResponse)
+                    return JsonConvert.DeserializeObject<T>(response);
+                else
+                    return default;
+            }
+            catch (Exception exception)
+            {
+                Log.Error($"Event bus request failed: {exception}");
+                beginShutdown();
+                return default;
+            }
+        }
+
+        private DirectoryInfo? setupServerFiles(byte[] serverData)
         {
             DirectoryInfo workDir = new DirectoryInfo(Path.Combine(baseDir.FullName, "server"));
             if (!workDir.TryCreate())
@@ -672,7 +664,7 @@ namespace ViennaDotNet.Buildplate.Launcher
             return tag;
         }
 
-        private DirectoryInfo? setupBridgeFiles(Buildplates.Buildplate buildplate, byte[] serverData)
+        private DirectoryInfo? setupBridgeFiles(byte[] serverData)
         {
             DirectoryInfo workDir = new DirectoryInfo(Path.Combine(baseDir.FullName, "bridge"));
             if (!workDir.TryCreate())
@@ -895,36 +887,39 @@ namespace ViennaDotNet.Buildplate.Launcher
 
         private void beginShutdown()
         {
-            Monitor.Enter(subprocessLock);
-
-            if (shuttingDown)
+            new Thread(() =>
             {
-                Log.Debug("Already shutting down, not beginning shutdown");
-                Monitor.Exit(subprocessLock);
-                return;
-            }
-            shuttingDown = true;
-
-            Log.Information("Beginning shutdown");
-
-            if (bridgeProcess != null)
-            {
-                Log.Information("Waiting for bridge to shut down");
-                bridgeProcess.Kill();
-                Monitor.Exit(subprocessLock);
-                int exitCode = waitForProcess(bridgeProcess);
                 Monitor.Enter(subprocessLock);
-                bridgeProcess = null;
-                Log.Information($"Bridge has finished with exit code {exitCode}");
-            }
 
-            if (serverProcess != null)
-            {
-                Log.Information("Asking the server to shut down");
-                serverProcess.Kill();
-            }
+                if (shuttingDown)
+                {
+                    Log.Debug("Already shutting down, not beginning shutdown");
+                    Monitor.Exit(subprocessLock);
+                    return;
+                }
+                shuttingDown = true;
 
-            Monitor.Exit(subprocessLock);
+                Log.Information("Beginning shutdown");
+
+                if (bridgeProcess != null)
+                {
+                    Log.Information("Waiting for bridge to shut down");
+                    bridgeProcess.Kill();
+                    Monitor.Exit(subprocessLock);
+                    int exitCode = waitForProcess(bridgeProcess);
+                    Monitor.Enter(subprocessLock);
+                    bridgeProcess = null;
+                    Log.Information($"Bridge has finished with exit code {exitCode}");
+                }
+
+                if (serverProcess != null)
+                {
+                    Log.Information("Asking the server to shut down");
+                    serverProcess.Kill();
+                }
+
+                Monitor.Exit(subprocessLock);
+            }).Start();
         }
 
         private static int waitForProcess(Process process)
@@ -986,6 +981,19 @@ namespace ViennaDotNet.Buildplate.Launcher
                     continue;
                 }
             }
+        }
+
+        private record BuildplateLoadRequest(
+            string playerId,
+            string buildplateId
+        )
+        {
+        }
+
+        private record BuildplateLoadResponse(
+            string serverDataBase64
+        )
+        {
         }
     }
 }

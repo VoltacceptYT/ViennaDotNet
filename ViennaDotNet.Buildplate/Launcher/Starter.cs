@@ -13,16 +13,12 @@ namespace ViennaDotNet.Buildplate.Launcher
 {
     public class Starter
     {
-        private readonly EarthDB earthDB;
-        private readonly ObjectStoreClient objectStoreClient;
         private readonly EventBusClient eventBusClient;
 
         private readonly string publicAddress;
         private readonly string javaCmd;
         private readonly DirectoryInfo tmpDir;
         private readonly string eventBusConnectionString;
-        private readonly string apiServerAddress;
-        private readonly string apiServerToken;
 
         private readonly FileInfo fountainBridgeJar;
         private readonly DirectoryInfo serverTemplateDir;
@@ -35,18 +31,14 @@ namespace ViennaDotNet.Buildplate.Launcher
         private readonly HashSet<int> portsInUse = new HashSet<int>();
         private readonly HashSet<int> serverInternalPortsInUse = new HashSet<int>();
 
-        public Starter(EarthDB earthDB, ObjectStoreClient objectStoreClient, EventBusClient eventBusClient, string eventBusConnectionString, string apiServerAddress, string apiServerToken, string publicAddress, string bridgeJar, string serverTemplateDir, string fabricJarName, string connectorPluginJar)
+        public Starter(EventBusClient eventBusClient, string eventBusConnectionString, string publicAddress, string bridgeJar, string serverTemplateDir, string fabricJarName, string connectorPluginJar)
         {
-            this.earthDB = earthDB;
-            this.objectStoreClient = objectStoreClient;
             this.eventBusClient = eventBusClient;
 
             this.publicAddress = publicAddress;
             this.javaCmd = locateJava();
             this.tmpDir = new DirectoryInfo(Path.GetTempPath());
             this.eventBusConnectionString = eventBusConnectionString;
-            this.apiServerAddress = apiServerAddress;
-            this.apiServerToken = apiServerToken;
 
             this.fountainBridgeJar = new FileInfo(bridgeJar);
             this.serverTemplateDir = new DirectoryInfo(serverTemplateDir);
@@ -62,7 +54,7 @@ namespace ViennaDotNet.Buildplate.Launcher
 
             int port = findPort(portsInUse, BASE_PORT);
             int serverInternalPort = findPort(serverInternalPortsInUse, SERVER_INTERNAL_BASE_PORT);
-            Instance instance = Instance.run(earthDB, objectStoreClient, eventBusClient, playerId, buildplateId, instanceId, survival, night, publicAddress, port, serverInternalPort, javaCmd, fountainBridgeJar, serverTemplateDir, fabricJarName, connectorPluginJar, baseDir, eventBusConnectionString, apiServerAddress, apiServerToken);
+            Instance instance = Instance.run(eventBusClient, playerId, buildplateId, instanceId, survival, night, publicAddress, port, serverInternalPort, javaCmd, fountainBridgeJar, serverTemplateDir, fabricJarName, connectorPluginJar, baseDir, eventBusConnectionString);
             new Thread(() =>
             {
                 instance.waitForShutdown();
