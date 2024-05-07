@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TrimMode>partial</TrimMode>
+    <Platforms>AnyCPU;x86;ARM32;ARM64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
