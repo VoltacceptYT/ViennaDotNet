@@ -113,6 +113,7 @@ namespace ViennaDotNet.ApiServer.Utils
                                 inventory.addItems(id, Java.IntStream.Range(0, quantity).Select(index => new NonStackableItemInstance(U.RandomUuid().ToString(), 0)).ToArray());
 
                             journal.touchItem(id, currentTime);
+                            journal.addCollectedItem(id, quantity);
                         }
                     }
                     updateQuery.Update("inventory", playerId, inventory);
