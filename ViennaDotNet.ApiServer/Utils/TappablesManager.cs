@@ -4,6 +4,7 @@ using ViennaDotNet.Common;
 using ViennaDotNet.Common.Utils;
 using ViennaDotNet.EventBus.Client;
 using static ViennaDotNet.ApiServer.Utils.TappablesManager.Tappable;
+using static ViennaDotNet.DB.Models.Player.ActivityLog;
 
 namespace ViennaDotNet.ApiServer.Utils
 {
@@ -13,6 +14,7 @@ namespace ViennaDotNet.ApiServer.Utils
         private readonly RequestSender requestSender;
 
         private readonly Dictionary<string, Dictionary<string, Tappable>> tappables = new();
+        private int pruneCounter = 0;
 
         public TappablesManager(EventBusClient eventBusClient)
         {
@@ -79,17 +81,16 @@ namespace ViennaDotNet.ApiServer.Utils
         {
         }
 
-        private void handleEvent(Subscriber.Event _event)
+        private void handleEvent(Subscriber.Event @event)
         {
-            switch (_event.type)
+            switch (@event.type)
             {
                 case "tappableSpawn":
                     {
-                        // TODO: prune expired tappables
                         Tappable? tappable;
                         try
                         {
-                            tappable = JsonConvert.DeserializeObject<Tappable>(_event.data);
+                            tappable = JsonConvert.DeserializeObject<Tappable>(@event.data);
                             if (tappable is null)
                                 throw new Exception("tappable is null");
                         }
@@ -99,6 +100,11 @@ namespace ViennaDotNet.ApiServer.Utils
                             break;
                         }
                         addTappable(tappable);
+                        if (pruneCounter++ == 10)
+                        {
+                            pruneCounter = 0;
+                            pruneTappables(@event.timestamp);
+                        }
                         break;
                     }
             }
@@ -108,6 +114,17 @@ namespace ViennaDotNet.ApiServer.Utils
         {
             string tileId = locationToTileId(tappable.lat, tappable.lon);
             tappables.ComputeIfAbsent(tileId, tileId1 => new())![tappable.id] = tappable;
+        }
+
+        private void pruneTappables(long currentTime)
+        {
+            tappables.Values.ForEach(tileTappables => tileTappables.RemoveIf(entry =>
+            {
+                Tappable tappable = entry.Value;
+                long expiresAt = tappable.spawnTime + tappable.validFor;
+                return expiresAt <= currentTime;
+            }));
+            tappables.RemoveIf(entry => entry.Value.IsEmpty());
         }
 
         public static string locationToTileId(float lat, float lon)
