@@ -324,10 +324,21 @@ namespace ViennaDotNet.ApiServer.Utils
                         inventory.addItems(inventoryAddItemMessage.itemId, new NonStackableItemInstance[] { new NonStackableItemInstance(inventoryAddItemMessage.instanceId!, inventoryAddItemMessage.wear) });
 
                     journal.touchItem(inventoryAddItemMessage.itemId, timestamp);
+                    Tokens.Token? journalItemUnlockedToken = null;
+                    if (journal.getItem(inventoryAddItemMessage.itemId)!.amountCollected == 0)
+                    {
+                        journalItemUnlockedToken = new Tokens.JournalItemUnlockedToken(inventoryAddItemMessage.itemId);
+                    }
+                    journal.addCollectedItem(inventoryAddItemMessage.itemId, inventoryAddItemMessage.count);
 
-                    return new EarthDB.Query(true)
+                    EarthDB.Query query = new EarthDB.Query(true)
                         .Update("inventory", inventoryAddItemMessage.playerId, inventory)
                         .Update("journal", inventoryAddItemMessage.playerId, journal);
+
+                    if (journalItemUnlockedToken != null)
+                        query.Then(TokenUtils.addToken(playerId, journalItemUnlockedToken));
+
+                    return query;
                 })
                 .Execute(earthDB);
             return true;
