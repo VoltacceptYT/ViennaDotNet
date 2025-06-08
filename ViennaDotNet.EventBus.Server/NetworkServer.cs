@@ -173,7 +173,10 @@ public class NetworkServer
         {
             Log.Information("Connection closed");
 
-            channels.Values.ForEach(channel => channel.handleClose());
+            foreach (var channel in channels)
+            {
+                channel.Value.handleClose();
+            }
         }
 
         private Channel? handleChannelOpenCommand(int channelId, string command)
@@ -522,7 +525,11 @@ public class NetworkServer
         public override void handleClose()
         {
             requestHandler.remove();
-            pendingResponses.Values.ForEach(completableFuture => completableFuture.SetResult(null));
+            foreach (var source in pendingResponses.Values)
+            {
+                source.SetResult(null);
+            }
+
             pendingResponses.Clear();
         }
 
@@ -534,11 +541,11 @@ public class NetworkServer
 
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Append(requestId);
-            stringBuilder.Append(":");
-            stringBuilder.Append(request.timestamp.ToString());
-            stringBuilder.Append(":");
+            stringBuilder.Append(':');
+            stringBuilder.Append(request.timestamp);
+            stringBuilder.Append(':');
             stringBuilder.Append(request.type);
-            stringBuilder.Append(":");
+            stringBuilder.Append(':');
             stringBuilder.Append(request.data);
             sendMessage(stringBuilder.ToString());
 
@@ -553,7 +560,11 @@ public class NetworkServer
         private void error()
         {
             _error = true;
-            pendingResponses.Values.ForEach(completableFuture => completableFuture.SetResult(null));
+            foreach (var item in pendingResponses)
+            {
+                item.Value.SetResult(null);
+            }
+
             pendingResponses.Clear();
             sendMessage("ERR");
         }

@@ -158,7 +158,10 @@ public class Server
             server.subscribersLock.EnterReadLock();
 
             Subscriber.EntryMessage message = new Subscriber.EntryMessage(timestamp, type, data);
-            server.getSubscribers(queueName).ForEach(subscriber => subscriber.push(message));
+            foreach (var subscriber in server.getSubscribers(queueName))
+            {
+                subscriber.push(message);
+            }
 
             server.subscribersLock.ExitReadLock();
 

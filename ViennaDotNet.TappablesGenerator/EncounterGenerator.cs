@@ -69,18 +69,21 @@ public class EncounterGenerator
             Log.Information("Loading encounter generator data");
             string dataDir = Path.Combine("data", "encounter");
             List<EncounterConfig> encounterConfigs = [];
-            foreach (string file in Directory.EnumerateFiles(dataDir))
+            if (Directory.Exists(dataDir))
             {
-                encounterConfigs.Add(JsonConvert.DeserializeObject<EncounterConfig>(File.ReadAllText(file))!);
+                foreach (string file in Directory.EnumerateFiles(dataDir))
+                {
+                    encounterConfigs.Add(JsonConvert.DeserializeObject<EncounterConfig>(File.ReadAllText(file))!);
+                }
             }
 
             this.encounterConfigs = [.. encounterConfigs];
             totalWeight = (float)encounterConfigs.Select(encounterConfig => (double)encounterConfig.rarity.GetWeight()).Sum();
-            maxDuration = encounterConfigs.Select(encounterConfig => (int)encounterConfig.duration).Max() * 1000;
+            maxDuration = encounterConfigs.Select(encounterConfig => (int)encounterConfig.duration).DefaultIfEmpty().Max() * 1000;
         }
         catch (Exception exception)
         {
-            Log.Fatal("Failed to load encounter generator data", exception);
+            Log.Fatal($"Failed to load encounter generator data {exception}");
             Environment.Exit(1);
         }
 

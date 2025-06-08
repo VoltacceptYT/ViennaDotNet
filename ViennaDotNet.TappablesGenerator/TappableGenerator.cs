@@ -1,28 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Serilog;
+using System;
 using System.Runtime.Serialization;
 using ViennaDotNet.Common;
 using ViennaDotNet.Common.Utils;
 
-using Rarity = ViennaDotNet.TappablesGenerator.TappableGenerator.TappableConfig.Rarity;
-
 namespace ViennaDotNet.TappablesGenerator;
-
-file static class RarityE
-{
-    private static readonly Dictionary<Rarity, float> valueToWeight = new Dictionary<Rarity, float>()
-    {
-        { Rarity.COMMON, 1.0f },
-        { Rarity.UNCOMMON, 0.75f },
-        { Rarity.RARE, 0.5f },
-        { Rarity.EPIC, 0.25f },
-        { Rarity.LEGENDARY, 0.125f },
-    };
-
-    public static float GetWeight(this Rarity rarity)
-        => valueToWeight[rarity];
-}
 
 public class TappableGenerator
 {
@@ -35,23 +19,16 @@ public class TappableGenerator
     private static readonly long MAX_DELAY = 2 * 60 * 1000;
 
     internal sealed record TappableConfig(
-        string tappableID,
-        Rarity rarity,
-        int experiencePoints,
-        string[][] possibleDropSets,
-        Dictionary<string, TappableConfig.ItemCount> possibleItemCount
+        string icon,
+        int experiencePoints,    // TODO: how is tappable XP determined?
+        TappableConfig.DropSet[] dropSets,
+        Dictionary<string, TappableConfig.ItemCount> itemCounts
     )
     {
-        [JsonConverter(typeof(StringEnumConverter))]
-        public enum Rarity
-        {
-            // TODO: find actual weights
-            [EnumMember(Value = "Common")] COMMON,
-            [EnumMember(Value = "Uncommon")] UNCOMMON,
-            [EnumMember(Value = "Rare")] RARE,
-            [EnumMember(Value = "Epic")] EPIC,
-            [EnumMember(Value = "Legendary")] LEGENDARY
-        }
+        public sealed record DropSet(
+            string[] items,
+            int chance
+        );
 
         public sealed record ItemCount(
             int min,
@@ -60,7 +37,6 @@ public class TappableGenerator
     }
 
     private readonly TappableConfig[] tappableConfigs;
-    private readonly float totalWeight;
 
     private readonly Random random;
 
@@ -76,8 +52,7 @@ public class TappableGenerator
                 tappableConfigs.AddLast(JsonConvert.DeserializeObject<TappableConfig>(File.ReadAllText(file))!);
             }
 
-            this.tappableConfigs = tappableConfigs.ToArray();
-            totalWeight = tappableConfigs.Select(tappableConfig => tappableConfig.rarity.GetWeight()).Sum();
+            this.tappableConfigs = [.. tappableConfigs];
         }
         catch (Exception ex)
         {
@@ -97,15 +72,15 @@ public class TappableGenerator
 
         foreach (TappableConfig tappableConfig in tappableConfigs)
         {
-            if (tappableConfig.possibleDropSets.Length == 0)
-                Log.Warning($"Tappable config {tappableConfig.tappableID} has no drop sets");
+            if (tappableConfig.dropSets.Length == 0)
+                Log.Warning($"Tappable config {tappableConfig.icon} has no drop sets");
 
-            foreach (string? itemId in tappableConfig.possibleDropSets
-                 .SelectMany(a => a))
+            foreach (string? itemId in tappableConfig.dropSets
+                 .SelectMany(dropSet => dropSet.items))
             {
-                if (!tappableConfig.possibleItemCount.ContainsKey(itemId))
+                if (!tappableConfig.itemCounts.ContainsKey(itemId))
                 {
-                    Log.Fatal($"Tappable config {tappableConfig.tappableID} has no item count for item {itemId}");
+                    Log.Fatal($"Tappable config {tappableConfig.icon} has no item count for item {itemId}");
                     Environment.Exit(1);
                     throw new InvalidOperationException();
                 }
@@ -128,35 +103,41 @@ public class TappableGenerator
             long spawnDelay = random.NextInt64(MIN_DELAY, MAX_DELAY + 1);
             long duration = random.NextInt64(MIN_DURATION, MAX_DURATION + 1);
 
-            float configPos = random.NextSingle() * totalWeight;
-            TappableConfig? tappableConfig = null;
-            foreach (TappableConfig tappableConfig1 in tappableConfigs)
-            {
-                tappableConfig = tappableConfig1;
-                configPos -= tappableConfig1.rarity.GetWeight();
-                if (configPos <= 0.0f)
-                    break;
-            }
-
-            if (tappableConfig == null)
-                throw new InvalidOperationException();
+            TappableConfig tappableConfig = tappableConfigs[random.Next(0, tappableConfigs.Length)];
 
             float[] tileBounds = getTileBounds(tileX, tileY);
             float lat = random.NextSingle(tileBounds[1], tileBounds[0]);
             float lon = random.NextSingle(tileBounds[2], tileBounds[3]);
 
-            LinkedList<Tappable.Drops.Item> items = new();
-            string[] dropSet = tappableConfig.possibleDropSets[random.Next(0, tappableConfig.possibleDropSets.Length)];
+            int dropSetIndex = random.Next(0, tappableConfig.dropSets.Select(dropSet=>(int)dropSet.chance).Sum());
+            TappableConfig.DropSet? dropSet = null;
 
-            foreach (string itemId in dropSet)
+            foreach (TappableConfig.DropSet dropSet1 in tappableConfig.dropSets)
             {
-                TappableConfig.ItemCount itemCount = tappableConfig.possibleItemCount[itemId];
+                dropSet = dropSet1;
+                dropSetIndex -= dropSet1.chance;
+                if (dropSetIndex <= 0)
+                {
+                    break;
+                }
+            }
+
+            if (dropSet == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            LinkedList<Tappable.Drops.Item> items = new();
+
+            foreach (string itemId in dropSet.items)
+            {
+                TappableConfig.ItemCount itemCount = tappableConfig.itemCounts[itemId];
                 items.AddLast(new Tappable.Drops.Item(itemId, random.Next(itemCount.min, itemCount.max + 1)));
             }
 
             Tappable.Drops drops = new Tappable.Drops(
                 tappableConfig.experiencePoints,
-                items.ToArray()
+                [.. items]
             );
 
             Tappable tappable = new Tappable(
@@ -165,14 +146,14 @@ public class TappableGenerator
                 lon,
                 currentTime + spawnDelay,
                 duration,
-                tappableConfig.tappableID,
-                Enum.Parse<Tappable.Rarity>(tappableConfig.rarity.ToString()),
+                tappableConfig.icon,
+                Tappable.Rarity.COMMON,    // TODO: determine rarity from drops
                 drops
             );
             tappables.AddLast(tappable);
         }
 
-        return tappables.ToArray();
+        return [.. tappables];
     }
 
     private static float[] getTileBounds(int tileX, int tileY)

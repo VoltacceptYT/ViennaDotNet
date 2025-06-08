@@ -17,7 +17,11 @@ sealed class NbtBuilder
         public TagCompound build(string name)
         {
             TagCompound tag = new TagCompound(name);
-            tags.ForEach(tag.Value.Add);
+            foreach (var item in tags)
+            {
+                tag.Value.Add(item);
+            }
+
             return tag;
         }
 
@@ -127,7 +131,11 @@ sealed class NbtBuilder
         public TagList build(string name)
         {
             TagList tag = new TagList(name, type);
-            tags.ForEach(tag.Value.Add);
+            foreach (var item in tags)
+            {
+                tag.Value.Add(item);
+            }
+
             return tag;
         }
 

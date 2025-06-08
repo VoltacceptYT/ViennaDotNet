@@ -8,10 +8,11 @@ public sealed class Publisher
     private readonly EventBusClient client;
     private readonly int channelId;
 
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
 
     private bool _closed = false;
 
+    // TODO: probably should be a queue
     private readonly LinkedList<string> queuedEvents = new();
     private readonly LinkedList<TaskCompletionSource<bool>> queuedEventResults = new();
     private TaskCompletionSource<bool>? currentPendingEventResult = null;
@@ -58,6 +59,18 @@ public sealed class Publisher
         }
 
         return completableFuture.Task;
+    }
+
+    public void flush()
+    {
+        Monitor.Enter(_lock);
+        var task = queuedEventResults.Count == 0 ? currentPendingEventResult : queuedEventResults.Last!.Value;
+        Monitor.Exit(_lock);
+
+        if (task is not null)
+        {
+            task.Task.Wait();
+        }
     }
 
     internal bool handleMessage(string message)
@@ -109,7 +122,11 @@ public sealed class Publisher
                 currentPendingEventResult = null;
             }
 
-            queuedEventResults.ForEach(completableFuture => completableFuture.SetResult(false));
+            foreach (var task in queuedEventResults)
+            {
+                task.SetResult(false);
+            }
+
             queuedEventResults.Clear();
             queuedEvents.Clear();
         }

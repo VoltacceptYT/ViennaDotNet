@@ -3,7 +3,7 @@ using ViennaDotNet.Common.Utils;
 
 namespace ViennaDotNet.EventBus.Client;
 
-public sealed class RequestSender
+public sealed partial class RequestSender
 {
     private readonly EventBusClient client;
     private readonly int channelId;
@@ -58,6 +58,18 @@ public sealed class RequestSender
         Monitor.Exit(_lock);
 
         return completableFuture;
+    }
+
+    public void flush()
+    {
+        Monitor.Enter(_lock);
+        var task = queuedRequestResponses.Count == 0 ? currentPendingResponse : queuedRequestResponses.Last!.Value;
+        Monitor.Exit(_lock);
+
+        if (task is not null)
+        {
+            task.Task.Wait();
+        }
     }
 
     internal bool handleMessage(string message)
@@ -146,7 +158,7 @@ public sealed class RequestSender
 
     private static bool validateQueueName(string queueName)
     {
-        if (string.IsNullOrWhiteSpace(queueName) || queueName.Length == 0 || Regex.IsMatch(queueName, "[^A-Za-z0-9_\\-]") || Regex.IsMatch(queueName, "^[^A-Za-z0-9]"))
+        if (string.IsNullOrWhiteSpace(queueName) || queueName.Length == 0 || Regex1().IsMatch(queueName) || Regex2().IsMatch(queueName))
             return false;
 
         return true;
@@ -154,7 +166,7 @@ public sealed class RequestSender
 
     private static bool validateType(string type)
     {
-        if (string.IsNullOrWhiteSpace(type) || type.Length == 0 || Regex.IsMatch(type, "[^A-Za-z0-9_\\-]") || Regex.IsMatch(type, "^[^A-Za-z0-9]"))
+        if (string.IsNullOrWhiteSpace(type) || type.Length == 0 || Regex1().IsMatch(type) || Regex2().IsMatch(type))
             return false;
 
         return true;
@@ -168,4 +180,10 @@ public sealed class RequestSender
 
         return true;
     }
+
+    [GeneratedRegex("[^A-Za-z0-9_\\-]")]
+    private static partial Regex Regex1();
+
+    [GeneratedRegex("^[^A-Za-z0-9]")]
+    private static partial Regex Regex2();
 }

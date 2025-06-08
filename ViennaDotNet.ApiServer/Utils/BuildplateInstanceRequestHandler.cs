@@ -19,20 +19,19 @@ public sealed class BuildplateInstanceRequestHandler
 {
     public static void start(EarthDB earthDB, EventBusClient eventBusClient, ObjectStoreClient objectStoreClient, Catalog catalog)
     {
-        new BuildplateInstanceRequestHandler(earthDB, eventBusClient, objectStoreClient, catalog);
+        _ = new BuildplateInstanceRequestHandler(earthDB, eventBusClient, objectStoreClient, catalog);
     }
 
     private readonly EarthDB earthDB;
     private readonly ObjectStoreClient objectStoreClient;
     private readonly Catalog catalog;
-    private readonly BuildplateInstancesManager buildplateInstancesManager;
+    private static BuildplateInstancesManager buildplateInstancesManager => Program.buildplateInstancesManager;
 
     public BuildplateInstanceRequestHandler(EarthDB earthDB, EventBusClient eventBusClient, ObjectStoreClient objectStoreClient, Catalog catalog)
     {
         this.earthDB = earthDB;
         this.objectStoreClient = objectStoreClient;
         this.catalog = catalog;
-        this.buildplateInstancesManager = new BuildplateInstancesManager(eventBusClient);    // TODO: would be nicer to use the same instance as BuildplatesRouter
 
         RequestHandler requestHandler = eventBusClient.addRequestHandler("buildplates", new RequestHandler.Handler(
             request =>
@@ -57,7 +56,8 @@ public sealed class BuildplateInstanceRequestHandler
                                 {
                                     return null;
                                 }
-                                BuildplateLoadResponse buildplateLoadResponse = handleLoadShared(sharedBuildplateLoadRequest.sharedBuildplateId);
+
+                                BuildplateLoadResponse? buildplateLoadResponse = handleLoadShared(sharedBuildplateLoadRequest.sharedBuildplateId);
                                 return buildplateLoadResponse is not null ? JsonConvert.SerializeObject(buildplateLoadResponse) : null;
                             }
                         case "saved":

@@ -244,6 +244,12 @@ public class Instance
 
             requestHandler?.close();
 
+            if (requestSender is not null)
+            {
+                requestSender.flush();
+                requestSender.close();
+            }
+
             cleanupBaseDir();
 
             Log.Information("Finished");

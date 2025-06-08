@@ -196,7 +196,11 @@ public class ObjectStoreClient
                     currentCommand = null;
                 }
 
-                queuedCommands.ForEach(command => command.completableFuture.TrySetResult(command.type == Command.Type.DELETE ? false : null));
+                foreach (var command in queuedCommands)
+                {
+                    command.completableFuture.TrySetResult(command.type == Command.Type.DELETE ? false : null);
+                }
+
                 queuedCommands.Clear();
             }
         });
@@ -377,7 +381,7 @@ public class ObjectStoreClient
 
                                 if (length == 0)
                                 {
-                                    currentCommand.completableFuture.TrySetResult(new byte[0]);
+                                    currentCommand.completableFuture.TrySetResult(Array.Empty<byte>());
                                     sendNextCommand();
                                 }
 
