@@ -14,7 +14,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public static class BoostUtils
 {
-    public static EarthDB.Query activatePotion(string playerId, string itemId, long currentTime, Catalog.ItemsCatalog itemsCatalog)
+    public static string? activatePotion(Boosts boosts, string itemId, long currentTime, Catalog.ItemsCatalog itemsCatalog)
     {
         Catalog.ItemsCatalog.Item item = itemsCatalog.getItem(itemId) ?? throw new ArgumentException(nameof(itemId));
 
@@ -24,29 +24,41 @@ public static class BoostUtils
             throw new ArgumentException();
         }
 
+        boosts.prune(currentTime);
+
         string instanceId = U.RandomUuid().ToString();
         long duration = boostInfo.duration is not null ? boostInfo.duration.Value : boostInfo.effects.Select(effect => effect.duration).DefaultIfEmpty().Max();
 
-        EarthDB.Query getQuery = new EarthDB.Query(true);
-        getQuery.Get("boosts", playerId, typeof(Boosts));
-        getQuery.Then(results =>
+        int newIndex = -1;
+        for (int index = 0; index < boosts.activeBoosts.Length; index++)
         {
-            Boosts boosts = (Boosts)results.Get("boosts").Value;
-            boosts.add(instanceId, itemId, currentTime, duration);
-            boosts.prune(currentTime);
-            EarthDB.Query updateQuery = new EarthDB.Query(true);
-            updateQuery.Update("boosts", playerId, boosts);
-            updateQuery.Extra("instanceId", instanceId);
-            return updateQuery;
-        });
-        return getQuery;
+            if (boosts.activeBoosts[index] is null)
+            {
+                newIndex = index;
+                break;
+            }
+        }
+
+        if (newIndex == -1)
+        {
+            return null;
+        }
+
+        boosts.activeBoosts[newIndex] = new Boosts.ActiveBoost(instanceId, itemId, currentTime, duration);
+
+        return instanceId;
     }
 
     public static Catalog.ItemsCatalog.Item.BoostInfo.Effect[] getActiveEffects(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
     {
         LinkedList<Catalog.ItemsCatalog.Item.BoostInfo.Effect> effects = [];
-        foreach (Boosts.ActiveBoost activeBoost in boosts.getAll())
+        foreach (var activeBoost in boosts.activeBoosts)
         {
+            if (activeBoost is null)
+            {
+                continue;
+            }
+
             if (activeBoost.startTime + activeBoost.duration > currentTime)
             {
                 continue;

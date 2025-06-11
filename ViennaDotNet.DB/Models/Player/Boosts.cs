@@ -5,42 +5,35 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ViennaDotNet.Common.Utils;
+using static ViennaDotNet.DB.Models.Player.Boosts;
 
 namespace ViennaDotNet.DB.Models.Player;
 
 public sealed class Boosts
 {
     [JsonProperty]
-    private readonly Dictionary<string, ActiveBoost> activeBoosts = [];
+    public readonly ActiveBoost?[] activeBoosts;
 
     public Boosts()
     {
-        // empty
-    }
-
-    public ActiveBoost[] getAll()
-    {
-        return [.. activeBoosts.Values];
+        activeBoosts = new ActiveBoost[5];
     }
 
     public ActiveBoost? get(string instanceId)
     {
-        return activeBoosts.GetValueOrDefault(instanceId);
-    }
-
-    public void add(string instanceId, string itemId, long startTime, long duration)
-    {
-        activeBoosts[instanceId] = new ActiveBoost(instanceId, itemId, startTime, duration);
-    }
-
-    public void remove(string instanceId)
-    {
-        activeBoosts.Remove(instanceId);
+        return activeBoosts.FirstOrDefault(activeBoost => activeBoost is not null && activeBoost.instanceId == instanceId);
     }
 
     public void prune(long currentTime)
     {
-        activeBoosts.RemoveIf(item => item.Value.startTime + item.Value.duration < currentTime);
+        for (int index = 0; index < activeBoosts.Length; index++)
+        {
+            ActiveBoost? activeBoost = activeBoosts[index];
+            if (activeBoost is not null && activeBoost.startTime + activeBoost.duration < currentTime)
+            {
+                activeBoosts[index] = null;
+            }
+        }
     }
 
     public sealed record ActiveBoost(
