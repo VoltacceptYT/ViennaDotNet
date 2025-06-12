@@ -180,7 +180,7 @@ internal static class Program
                     {
                         int partCount = entryPath.SplitAny(parts, ['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
 
-                        if (partCount != 0)
+                        if (partCount != 2)
                         {
                             continue;
                         }
@@ -328,6 +328,7 @@ internal static class Program
         string? preview;
         if (eventBusClient != null)
         {
+            Log.Information("Generating preview");
             RequestSender requestSender = eventBusClient.addRequestSender();
             preview = await requestSender.request("buildplates", "preview", JsonSerializer.Serialize(new PreviewRequest(Convert.ToBase64String(worldData.ServerData), worldData.Night))).Task;
             requestSender.close();
@@ -339,9 +340,11 @@ internal static class Program
         }
         else
         {
+            Log.Information("Preview was not generated because event bus is not connected");
             preview = null;
         }
 
+        Log.Information("Storing world");
         string? serverDataObjectId = (string?)await objectStoreClient.store(worldData.ServerData).Task;
         if (serverDataObjectId is null)
         {
@@ -349,6 +352,7 @@ internal static class Program
             return false;
         }
 
+        Log.Information("Storing preview");
         string? previewObjectId = (string?)await objectStoreClient.store(preview != null ? Encoding.ASCII.GetBytes(preview) : []).Task;
         if (previewObjectId == null)
         {

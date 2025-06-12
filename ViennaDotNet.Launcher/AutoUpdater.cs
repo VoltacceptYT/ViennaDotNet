@@ -18,7 +18,10 @@ internal static class AutoUpdater
 
     public static async Task CheckAndUpdate()
     {
-        using HttpClient client = new HttpClient();
+        using HttpClient client = new HttpClient()
+        {
+            Timeout = TimeSpan.FromSeconds(3),
+        };
 
         Log.Information($"Current version: {currentVersion}");
         Log.Information("Getting new version");

@@ -15,7 +15,8 @@ internal static class Program
     public static Settings Settings = new Settings();
     private static readonly string settingsFile = "config.json";
 
-    static void Main(string[] args)
+    // currently doesn't work at all, consider remaking in https://github.com/gui-cs/Terminal.Gui
+    static async Task Main(string[] args)
     {
         var log = new LoggerConfiguration()
             .WriteTo.Console()
@@ -35,7 +36,7 @@ internal static class Program
             };
         }
 
-        AutoUpdater.CheckAndUpdate().Wait();
+        await AutoUpdater.CheckAndUpdate();
 
         Settings = Settings.Load(settingsFile);
 
@@ -78,8 +79,8 @@ internal static class Program
             return;
         }
 
-        if (Settings.SkipFileChecks!.Value)
-            Log.Warning("Skipped file validation, you can turn this off in 'Configure/Skip file validation before starting'");
+        if (Settings.SkipFileChecks ?? false)
+            Log.Warning("Skipped file validation, you can turn this on in 'Configure/Skip file validation before starting'");
         else
         {
             Log.Information("Checking files...");
