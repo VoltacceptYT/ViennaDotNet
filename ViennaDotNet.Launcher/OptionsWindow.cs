@@ -14,13 +14,13 @@ internal sealed class OptionsWindow : Window
 {
     public OptionsWindow(Settings settings)
     {
-        const int ResultButtonsGroup = 0;
+        const int ChoiceButtonsGroup = 0;
 
         Title = "Options";
 
         var apiPortLabel = new Label()
         {
-            Text = "Api port:"
+            Text = "Api _port:"
         };
 
         var apiPortInput = new TextField()
@@ -33,7 +33,7 @@ internal sealed class OptionsWindow : Window
 
         var eventBusPortLabel = new Label()
         {
-            Text = "EventBus port:",
+            Text = "_EventBus port:",
             X = Pos.Left(apiPortLabel),
             Y = Pos.Bottom(apiPortLabel) + 1,
         };
@@ -48,7 +48,7 @@ internal sealed class OptionsWindow : Window
 
         var objectStorePortLabel = new Label()
         {
-            Text = "ObjectStore port:",
+            Text = "_ObjectStore port:",
             X = Pos.Left(eventBusPortLabel),
             Y = Pos.Bottom(eventBusPortLabel) + 1,
         };
@@ -63,7 +63,7 @@ internal sealed class OptionsWindow : Window
 
         var thisIPLabel = new Label()
         {
-            Text = "IPv4 (IP of this computer):",
+            Text = "_IPv4 (IP of this computer):",
             X = Pos.Left(objectStorePortLabel),
             Y = Pos.Bottom(objectStorePortLabel) + 1,
         };
@@ -78,7 +78,7 @@ internal sealed class OptionsWindow : Window
 
         var earthDBConnectionLabel = new Label()
         {
-            Text = "Earth database connection string:",
+            Text = "Earth _database connection string:",
             X = Pos.Left(thisIPLabel),
             Y = Pos.Bottom(thisIPLabel) + 1,
         };
@@ -93,7 +93,7 @@ internal sealed class OptionsWindow : Window
 
         var tileDBConnectionLabel = new Label()
         {
-            Text = "Earth database connection string:",
+            Text = "_Tile database connection string:",
             X = Pos.Left(earthDBConnectionLabel),
             Y = Pos.Bottom(earthDBConnectionLabel) + 1,
         };
@@ -108,7 +108,7 @@ internal sealed class OptionsWindow : Window
 
         var skipFileValidationLabel = new Label()
         {
-            Text = "Skip file validation before starting:",
+            Text = "Skip file _validation before starting:",
             X = Pos.Left(tileDBConnectionLabel),
             Y = Pos.Bottom(tileDBConnectionLabel) + 1,
         };
@@ -122,8 +122,8 @@ internal sealed class OptionsWindow : Window
 
         var cancelBtn = new Button()
         {
-            Text = "Cancel",
-            X = Pos.Align(Alignment.Center, AlignmentModes.AddSpaceBetweenItems, ResultButtonsGroup),
+            Text = "_Cancel",
+            X = Pos.Align(Alignment.Center, AlignmentModes.AddSpaceBetweenItems, ChoiceButtonsGroup),
             Y = Pos.AnchorEnd(),
         };
         cancelBtn.Accepting += (s, e) =>
@@ -135,8 +135,8 @@ internal sealed class OptionsWindow : Window
 
         var applyBtn = new Button()
         {
-            Text = "Apply",
-            X = Pos.Align(Alignment.Center, AlignmentModes.AddSpaceBetweenItems, ResultButtonsGroup),
+            Text = "_Apply",
+            X = Pos.Align(Alignment.Center, AlignmentModes.AddSpaceBetweenItems, ChoiceButtonsGroup),
             Y = Pos.AnchorEnd(),
         };
         applyBtn.Accepting += (s, e) =>

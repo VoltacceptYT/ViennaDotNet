@@ -24,10 +24,10 @@ internal static class TappablesGenerator
     public static void Run(Settings settings)
     {
         Log.Information($"Running {DispName}");
-        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)), new string[]
-        {
+        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)),
+        [
             $"--eventbus=localhost:{settings.EventBusPort}"
-        })
+        ])
         {
             WorkingDirectory = Path.Combine(Environment.CurrentDirectory, DirName),
             CreateNoWindow = false,

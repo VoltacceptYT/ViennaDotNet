@@ -27,14 +27,14 @@ internal static class BuildplateImporter
         Process? process;
         try
         {
-            process = Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)), new string[]
-            {
+            process = Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)),
+            [
                 $"--db={settings.EarthDatabaseConnectionString}",
                 $"--eventbus=localhost:{settings.EventBusPort}",
                 $"--objectstore=localhost:{settings.ObjectStorePort}",
                 $"--id={playerId}",
                 $"--file={worldPath}"
-            })
+            ])
             {
                 WorkingDirectory = Path.Combine(Environment.CurrentDirectory, DirName),
                 CreateNoWindow = true,

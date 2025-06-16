@@ -71,13 +71,13 @@ internal static class ApiServer
     public static void Run(Settings settings)
     {
         Log.Information($"Running {DispName}");
-        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)), new string[]
-        {
+        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)),
+        [
             $"--port={settings.ApiPort}",
             $"--db={settings.EarthDatabaseConnectionString}",
             $"--eventbus=localhost:{settings.EventBusPort}",
             $"--objectstore=localhost:{settings.ObjectStorePort}"
-        })
+        ])
         {
             WorkingDirectory = Path.Combine(Environment.CurrentDirectory, DirName),
             CreateNoWindow = false,

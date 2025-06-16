@@ -1,18 +1,23 @@
-﻿using Newtonsoft.Json;
-using Serilog;
+﻿using Serilog;
 using System.Net;
+using System.Text.Json;
 
 namespace ViennaDotNet.Launcher;
 
 public class Settings
 {
+    private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions()
+    {
+        WriteIndented = true,
+    };
+
     public static readonly Settings Default = new Settings()
     {
         ApiPort = 80,
         EventBusPort = 5532,
         ObjectStorePort = 5396,
         IPv4 = "192.168.x.x",
-        EarthDatabaseConnectionString = $".{Path.DirectorySeparatorChar}earth.db",
+        EarthDatabaseConnectionString = $".{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}earth.db",
         TileDatabaseConnectionString = "Host=localhost;Username=mylogin;Password=mypass;Database=genoa_tile_data",
         SkipFileChecks = false,
     };
@@ -27,7 +32,7 @@ public class Settings
     public bool? SkipFileChecks { get; set; }
 
     public void Save(string path)
-        => File.WriteAllText(path, JsonConvert.SerializeObject(this, Formatting.Indented));
+        => File.WriteAllText(path, JsonSerializer.Serialize(this, jsonOptions));
 
     public static Settings Load(string path)
     {
@@ -44,9 +49,11 @@ public class Settings
         {
             try
             {
-                settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(path));
+                settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), jsonOptions);
                 if (settings is null)
+                {
                     throw new Exception("Settings is null");
+                }
             }
             catch (Exception ex)
             {
@@ -58,42 +65,49 @@ public class Settings
         bool anyErrors = false;
         if (settings.ApiPort is null)
         {
-            Log.Warning($"Api port is invalid, using default: {Default.ApiPort}");
+            Log.Warning($"Api port is invalid, using default: '{Default.ApiPort}'");
             settings.ApiPort = Default.ApiPort;
             anyErrors = true;
         }
 
         if (settings.EventBusPort is null)
         {
-            Log.Warning($"EventBus port is invalid, using default: {Default.EventBusPort}");
+            Log.Warning($"EventBus port is invalid, using default: '{Default.EventBusPort}'");
             settings.EventBusPort = Default.EventBusPort;
             anyErrors = true;
         }
 
         if (settings.ObjectStorePort is null)
         {
-            Log.Warning($"ObjectStore port is invalid, using default: {Default.ObjectStorePort}");
+            Log.Warning($"ObjectStore port is invalid, using default: '{Default.ObjectStorePort}'");
             settings.ObjectStorePort = Default.ObjectStorePort;
             anyErrors = true;
         }
 
         if (settings.IPv4 is null || !IPAddress.TryParse(settings.IPv4, out var _))
         {
-            Log.Warning($"IPv4 is invalid, using default: {Default.IPv4} (Change this in Options/IPv4)");
+            Log.Warning($"IPv4 is invalid, using default: '{Default.IPv4}' (Change this in Options/IPv4)");
             settings.IPv4 = Default.IPv4;
             anyErrors = true;
         }
 
         if (settings.EarthDatabaseConnectionString is null)
         {
-            Log.Warning($"DatabaseConnectionString is invalid, using default: {Default.EarthDatabaseConnectionString}");
+            Log.Warning($"DatabaseConnectionString is invalid, using default: '{Default.EarthDatabaseConnectionString}'");
             settings.EarthDatabaseConnectionString = Default.EarthDatabaseConnectionString;
+            anyErrors = true;
+        }
+
+        if (settings.TileDatabaseConnectionString is null)
+        {
+            Log.Warning($"TileDatabaseConnectionString is invalid, using default: '{Default.TileDatabaseConnectionString}'");
+            settings.TileDatabaseConnectionString = Default.TileDatabaseConnectionString;
             anyErrors = true;
         }
 
         if (settings.SkipFileChecks is null)
         {
-            Log.Warning($"Skip file checks is invalid, using default: {Default.SkipFileChecks}");
+            Log.Warning($"Skip file checks is invalid, using default: '{Default.SkipFileChecks}'");
             settings.SkipFileChecks = Default.SkipFileChecks;
             anyErrors = true;
         }
