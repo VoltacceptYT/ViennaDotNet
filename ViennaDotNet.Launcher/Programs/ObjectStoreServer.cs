@@ -26,11 +26,11 @@ internal static class ObjectStoreServer
         logger.Information($"Running {DispName}");
         Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName)),
         [
-            $"--dataDir=data{Path.DirectorySeparatorChar}objecct_store",
+            $"--dataDir=data{Path.DirectorySeparatorChar}object_store",
             $"--port={settings.ObjectStorePort}"
         ])
         {
-            WorkingDirectory = Path.Combine(Environment.CurrentDirectory, Program.ProgramsDir),
+            WorkingDirectory = Path.GetFullPath(Program.ProgramsDir),
             CreateNoWindow = false,
             UseShellExecute = true
         });

@@ -97,42 +97,9 @@ public class ConsoleProcess
     private void ProcessOnExited(object? sender, EventArgs eventArgs)
         => OnProcessExited();
 
-    public void StopAndWait()
+    public void StopAndWait(int timeout = 10*1000)
     {
-        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-        {
-            FreeConsole(); // free back our console
-            if (AttachConsole((uint)Process.Id))
-            {
-                SetConsoleCtrlHandler(null, true);
-                try
-                {
-                    if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
-                    {
-                        Console.WriteLine($"Failed to send Ctrl+C to process");
-                        Process.TryStopGracefully();
-                        Process.WaitForExit();
-                        return;
-                    }
-
-                    Process.WaitForExit();
-                }
-                finally
-                {
-                    SetConsoleCtrlHandler(null, false);
-                    FreeConsole();
-                    ConsoleUtils.CreateConsole(true);
-                    Console.WriteLine("Re allocated/attached console");
-                }
-
-                return;
-            }
-            else
-                Console.WriteLine("Failed to attach to console of another process");
-        }
-
-        Process.TryStopGracefully();
-        Process.WaitForExit();
+        Process.StopGracefullyOrKill(timeout);
     }
 
     private const int CTRL_C_EVENT = 0;

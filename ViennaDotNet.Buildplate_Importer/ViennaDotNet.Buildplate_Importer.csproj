@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TrimMode>partial</TrimMode>
+    <AssemblyName>BuildplateImporter</AssemblyName>
     <Platforms>AnyCPU;x86;ARM32;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
   </PropertyGroup>

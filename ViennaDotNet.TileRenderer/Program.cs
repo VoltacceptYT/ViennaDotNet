@@ -6,6 +6,8 @@ using ViennaDotNet.EventBus.Client;
 using ViennaDotNet.StaticData;
 using ViennaDotNet.TileRenderer;
 
+namespace ViennaDotNet.TileRenderer;
+
 internal static class Program
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -26,7 +28,7 @@ internal static class Program
     {
         var log = new LoggerConfiguration()
            .WriteTo.Console()
-           .WriteTo.File("logs/debug.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 8338607, outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+           .WriteTo.File("logs/tile_renderer/log.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 8338607, outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
            .MinimumLevel.Debug()
            .CreateLogger();
 
@@ -93,10 +95,10 @@ internal static class Program
         Log.Information("Connected to event bus");
 
         Log.Information("Loading static data");
-        StaticData staticData;
+        StaticData.StaticData staticData;
         try
         {
-            staticData = new StaticData(options.StaticDataPath);
+            staticData = new StaticData.StaticData(options.StaticDataPath);
         }
         catch (StaticDataException staticDataException)
         {

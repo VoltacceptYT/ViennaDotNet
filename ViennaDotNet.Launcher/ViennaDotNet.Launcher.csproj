@@ -9,6 +9,7 @@
     <Platforms>AnyCPU;x86;ARM32;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>Launcher</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

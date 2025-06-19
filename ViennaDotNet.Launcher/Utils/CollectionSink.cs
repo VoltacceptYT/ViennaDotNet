@@ -39,7 +39,18 @@ internal sealed class CollectionSink : ILogEventSink
 
         _formatter.Format(logEvent, _writer);
         var builder = _writer.GetStringBuilder();
-        _logCollection.Add(builder.ToString());
+        var log = builder.ToString().AsSpan();
+
+        foreach (var lineRange in log.Split(Environment.NewLine))
+        {
+            var line = log[lineRange].Trim();
+
+            if (!line.IsEmpty)
+            {
+                _logCollection.Add(line.ToString());
+            }
+        }
+
         builder.Clear();
     }
 }

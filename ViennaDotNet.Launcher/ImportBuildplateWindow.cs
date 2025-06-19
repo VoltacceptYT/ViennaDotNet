@@ -117,54 +117,8 @@ internal sealed class ImportBuildplateWindow : Window
     }
 
     private void Import(string playerId, string file)
-    {
-        var view = new FrameView()
-        {
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-        };
-
-        var logs = new ObservableCollection<string>();
-        var list = new ListView()
-        {
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-        };
-        list.VerticalScrollBar.AutoShow = true;
-        list.VerticalScrollBar.Enabled = true;
-        list.HorizontalScrollBar.AutoShow = true;
-        list.HorizontalScrollBar.Enabled = true;
-        list.SetSource(logs);
-
-        var btn = new Button()
-        {
-            Text = "_Cancel",
-            X = Pos.Center(),
-            Y = Pos.AnchorEnd(),
-        };
-        btn.Accepting += (s, e) =>
-        {
-            e.Handled = true;
-
-            Remove(view);
-        };
-
-        view.Add(list, btn);
-        Add(view);
-
-        var logger = Program.LoggerConfiguration
-            .WriteTo.Collection(logs)
-            .CreateLogger();
-
-        try
+        => UIUtils.RunWithLogs(this, async (logger, cancellationToken) =>
         {
             throw new NotImplementedException();
-        }
-        catch (Exception ex)
-        {
-            logger.Error($"Exception: {ex}");
-        }
-
-        btn.Text = "_OK";
-    }
+        });
 }

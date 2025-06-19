@@ -19,7 +19,7 @@ internal static class Program
     {
         var log = new LoggerConfiguration()
             .WriteTo.Console()
-            .WriteTo.File("object_store_server_logs/log.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 8338607, outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File("logs/object_store_server/log.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 8338607, outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
             .MinimumLevel.Debug()
             .CreateLogger();
 

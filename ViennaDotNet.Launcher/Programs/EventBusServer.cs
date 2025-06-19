@@ -29,7 +29,7 @@ internal static class EventBusServer
             $"--port={settings.EventBusPort}"
         ])
         {
-            WorkingDirectory = Path.Combine(Environment.CurrentDirectory, Program.ProgramsDir),
+            WorkingDirectory = Path.GetFullPath(Program.ProgramsDir),
             CreateNoWindow = false,
             UseShellExecute = true
         });

@@ -74,7 +74,7 @@ public static class ConsoleUtils
         CharSet = CharSet.Auto,
         CallingConvention = CallingConvention.StdCall)]
     private static extern IntPtr CreateFileW(
-          string lpFileName,
+          [MarshalAs(UnmanagedType.LPWStr)] string lpFileName,
           uint dwDesiredAccess,
           uint dwShareMode,
           IntPtr lpSecurityAttributes,

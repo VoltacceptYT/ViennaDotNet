@@ -12,12 +12,12 @@ namespace ViennaDotNet.Launcher;
 internal static class Program
 {
     public const string SettingsFile = "config.json";
-    public const string ProgramsDir = ""; // same as launcher
+    public const string ProgramsDir = "./"; // same as launcher
     public const string StaticDataDir = "staticdata";
 
     public static LoggerConfiguration LoggerConfiguration => new LoggerConfiguration()
             .WriteTo.Conditional(e => LogToConsole, wt => wt.Console())
-            .WriteTo.File("logs/debug.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 8338607, outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File("logs/launcher/log.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 8338607, outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
             .MinimumLevel.Debug();
 
     public static Settings Settings = Settings.Default;

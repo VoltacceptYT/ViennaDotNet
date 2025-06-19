@@ -6,31 +6,30 @@ namespace ViennaDotNet.Launcher.Programs;
 
 internal static class TappablesGenerator
 {
-    public const string DirName = "TappablesGenerator";
     public static readonly string ExeName = "TappablesGenerator" + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : "");
     public const string DispName = "Tappable generator";
 
-    public static bool Check()
+    public static bool Check(Settings settings, ILogger logger)
     {
-        string exePath = Path.GetFullPath(Path.Combine(DirName, ExeName));
+        string exePath = Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName));
         if (!File.Exists(exePath))
         {
-            Log.Error($"{DispName} exe doesn't exits: {exePath}");
+            logger.Error($"{DispName} exe doesn't exits: {exePath}");
             return false;
         }
 
         return true;
     }
 
-    public static void Run(Settings settings)
+    public static void Run(Settings settings, ILogger logger)
     {
-        Log.Information($"Running {DispName}");
-        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(DirName, ExeName)),
+        logger.Information($"Running {DispName}");
+        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName)),
         [
             $"--eventbus=localhost:{settings.EventBusPort}"
         ])
         {
-            WorkingDirectory = Path.Combine(Environment.CurrentDirectory, DirName),
+            WorkingDirectory = Path.GetFullPath(Program.ProgramsDir),
             CreateNoWindow = false,
             UseShellExecute = true
         });
