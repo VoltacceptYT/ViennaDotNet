@@ -52,7 +52,7 @@ internal static class UIUtils
             .WriteTo.Collection(logs)
             .CreateLogger();
 
-        action(logger, tokenSource.Token)
+        RunAction(action, logger, tokenSource.Token)
             .ContinueWith(lastTask =>
             {
                 if (lastTask.Exception is { } aggEx)
@@ -69,5 +69,11 @@ internal static class UIUtils
             {
                 logger.Error($"Exception: {ex}");
             });
+
+        static async Task RunAction(Func<ILogger, CancellationToken, Task> action, ILogger logger, CancellationToken cancellationToken)
+        {
+            await Task.Yield();
+            await action(logger, cancellationToken);
+        }
     }
 }

@@ -1,6 +1,8 @@
-﻿using Terminal.Gui.App;
+﻿using System.Diagnostics;
+using Terminal.Gui.App;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
+using ViennaDotNet.Launcher.Programs;
 using ViennaDotNet.Launcher.Utils;
 
 namespace ViennaDotNet.Launcher;
@@ -102,18 +104,62 @@ internal sealed class ImportBuildplateWindow : Window
             }
             else
             {
-                Import(playerId, file);
+                Import(settings, playerId, file);
             }
         };
 
         Add(idLabel, idInput, worldFileLabel, worldFileInput, cancelBtn, importBtn);
     }
 
-    private void Import(string playerId, string file)
+    private void Import(Settings settings, string playerId, string filePath)
         => UIUtils.RunWithLogs(this, async (logger, cancellationToken) =>
         {
-            await Task.Yield();
+            await FileChecker.Check(settings, true, logger, cancellationToken);
 
-            throw new NotImplementedException();
+            bool generatePreview = settings.GeneratePreviewOnImport is not false;
+
+            logger.Information("Starting or reusing processed");
+            var eventBus = ProcessUtils.StartIfNotRunning(EventBusServer.ExeName, () => EventBusServer.Run(settings, logger));
+            var objectStore = ProcessUtils.StartIfNotRunning(ObjectStoreServer.ExeName, () => ObjectStoreServer.Run(settings, logger));
+            // generates the preview
+            Process? buildplateLauncher;
+            if (generatePreview)
+            {
+                buildplateLauncher = ProcessUtils.StartIfNotRunning(BuildplateLauncher.ExeName, () => BuildplateLauncher.Run(settings, logger));
+            }
+            else
+            {
+                buildplateLauncher = null;
+                logger.Warning("Preview will not be generated, preview generation on import can be turned on in options");
+            }
+
+            logger.Information("Waiting for programs to start up");
+            await Task.Delay(5000, cancellationToken); // wait a bit for them to start (and possible crash)
+
+            if (eventBus is null || eventBus.HasExited)
+            {
+                logger.Error($"{EventBusServer.DispName} failed to start or crashed/exited");
+                return;
+            }
+
+            if (objectStore is null || objectStore.HasExited)
+            {
+                logger.Error($"{ObjectStoreServer.DispName} failed to start or crashed/exited");
+                return;
+            }
+
+            if (generatePreview && (buildplateLauncher is null || buildplateLauncher.HasExited))
+            {
+                logger.Error($"{BuildplateLauncher.DispName} failed to start or crashed/exited, preview generation on import can be turned off in options");
+                return;
+            }
+
+            var importer = BuildplateImporter.Run(settings, playerId, filePath, true, logger);
+
+            logger.Information($"Waiting for {BuildplateImporter.DispName} process to exit");
+
+            await importer.WaitForExitAsync(cancellationToken);
+
+            logger.Information($"{BuildplateImporter.DispName} process exited with exit code {importer.ExitCode}");
         });
 }

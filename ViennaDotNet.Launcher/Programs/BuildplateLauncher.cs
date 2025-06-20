@@ -23,10 +23,10 @@ internal static class BuildplateLauncher
         return true;
     }
 
-    public static void Run(Settings settings, ILogger logger)
+    public static Process? Run(Settings settings, ILogger logger)
     {
         logger.Information($"Running {DispName}");
-        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName)),
+        return Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName)),
         [
             $"--eventbus=localhost:{settings.EventBusPort}",
             $"--publicAddress={settings.IPv4}",

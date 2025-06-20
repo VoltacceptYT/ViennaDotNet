@@ -101,11 +101,45 @@ internal sealed class OptionsWindow : Window
             Width = Dim.Fill(),
         };
 
+        var generatePreviewOnImportLabel = new Label()
+        {
+            Text = "_Generate buildplate preview on import:",
+            X = Pos.Left(tileDBConnectionLabel),
+            Y = Pos.Bottom(tileDBConnectionLabel) + 1,
+        };
+
+        var generatePreviewOnImportInput = new CheckBox()
+        {
+            Text = settings.GeneratePreviewOnImport switch
+            {
+                true => "Yes",
+                false => "No",
+                _ => "",
+            },
+            CheckedState = settings.GeneratePreviewOnImport switch
+            {
+                true => CheckState.Checked,
+                false => CheckState.UnChecked,
+                _ => CheckState.None,
+            },
+            X = Pos.Right(generatePreviewOnImportLabel) + 1,
+            Y = Pos.Y(generatePreviewOnImportLabel),
+        };
+        generatePreviewOnImportInput.CheckedStateChanged += (s, e) =>
+        {
+            generatePreviewOnImportInput.Text = e.Value switch
+            {
+                CheckState.Checked => "Yes",
+                CheckState.UnChecked => "No",
+                _ => "",
+            };
+        };
+
         var skipFileValidationLabel = new Label()
         {
             Text = "Skip file _validation before starting:",
-            X = Pos.Left(tileDBConnectionLabel),
-            Y = Pos.Bottom(tileDBConnectionLabel) + 1,
+            X = Pos.Left(generatePreviewOnImportLabel),
+            Y = Pos.Bottom(generatePreviewOnImportLabel) + 1,
         };
 
         var skipFileValidationInput = new CheckBox()
@@ -182,6 +216,13 @@ internal sealed class OptionsWindow : Window
                 settings.IPv4 = thisIP.ToString();
                 settings.EarthDatabaseConnectionString = earthDBConnectionInput.Text;
                 settings.TileDatabaseConnectionString = tileDBConnectionInput.Text;
+                settings.GeneratePreviewOnImport = generatePreviewOnImportInput.CheckedState switch
+                {
+                    CheckState.None => false,
+                    CheckState.Checked => true,
+                    CheckState.UnChecked => false,
+                    _ => false,
+                };
                 settings.SkipFileChecks = skipFileValidationInput.CheckedState switch
                 {
                     CheckState.None => false,
@@ -194,6 +235,6 @@ internal sealed class OptionsWindow : Window
             }
         };
 
-        Add(apiPortLabel, apiPortInput, eventBusPortLabel, eventBusPortInput, objectStorePortLabel, objectStorePortInput, thisIPLabel, thisIPInput, earthDBConnectionLabel, earthDBConnectionInput, tileDBConnectionLabel, tileDBConnectionInput, skipFileValidationLabel, skipFileValidationInput, cancelBtn, applyBtn);
+        Add(apiPortLabel, apiPortInput, eventBusPortLabel, eventBusPortInput, objectStorePortLabel, objectStorePortInput, thisIPLabel, thisIPInput, earthDBConnectionLabel, earthDBConnectionInput, tileDBConnectionLabel, tileDBConnectionInput, generatePreviewOnImportLabel, generatePreviewOnImportInput, skipFileValidationLabel, skipFileValidationInput, cancelBtn, applyBtn);
     }
 }

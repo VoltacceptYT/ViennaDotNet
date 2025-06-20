@@ -21,10 +21,10 @@ internal static class ApiServer
         return true;
     }
 
-    public static void Run(Settings settings, ILogger logger)
+    public static Process? Run(Settings settings, ILogger logger)
     {
         logger.Information($"Running {DispName}");
-        Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName)),
+        return Process.Start(new ProcessStartInfo(Path.GetFullPath(Path.Combine(Program.ProgramsDir, ExeName)),
         [
             $"--port={settings.ApiPort}",
             $"--db=\"{settings.EarthDatabaseConnectionString}\"",

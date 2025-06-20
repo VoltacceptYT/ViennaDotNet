@@ -19,6 +19,7 @@ public class Settings
         IPv4 = "192.168.x.x",
         EarthDatabaseConnectionString = $".{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}earth.db",
         TileDatabaseConnectionString = "Host=localhost;Username=mylogin;Password=mypass;Database=genoa_tile_data",
+        GeneratePreviewOnImport = true,
         SkipFileChecks = false,
     };
 
@@ -28,6 +29,8 @@ public class Settings
     public string? IPv4 { get; set; }
     public string? EarthDatabaseConnectionString { get; set; }
     public string? TileDatabaseConnectionString { get; set; }
+
+    public bool? GeneratePreviewOnImport { get; set; }
 
     public bool? SkipFileChecks { get; set; }
 
@@ -114,6 +117,13 @@ public class Settings
         {
             Log.Warning($"TileDatabaseConnectionString is invalid, using default: '{Default.TileDatabaseConnectionString}'");
             settings.TileDatabaseConnectionString = Default.TileDatabaseConnectionString;
+            anyErrors = true;
+        }
+
+        if (settings.GeneratePreviewOnImport is null)
+        {
+            Log.Warning($"Generate preview on import is invalid, using default: '{Default.GeneratePreviewOnImport}'");
+            settings.GeneratePreviewOnImport = Default.GeneratePreviewOnImport;
             anyErrors = true;
         }
 
