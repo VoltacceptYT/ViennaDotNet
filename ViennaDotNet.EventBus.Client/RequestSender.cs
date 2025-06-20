@@ -50,7 +50,7 @@ public sealed partial class RequestSender
         {
             queuedRequests.AddLast(requestMessage);
             queuedRequestResponses.AddLast(completableFuture);
-            if (currentPendingResponse == null)
+            if (currentPendingResponse is null)
                 sendNextRequest();
         }
 
@@ -102,7 +102,7 @@ public sealed partial class RequestSender
             try
             {
                 Monitor.Enter(_lock);
-                if (currentPendingResponse != null)
+                if (currentPendingResponse is not null)
                 {
                     currentPendingResponse.SetResult(response);
                     currentPendingResponse = null;
@@ -136,7 +136,7 @@ public sealed partial class RequestSender
 
         _closed = true;
 
-        if (currentPendingResponse != null)
+        if (currentPendingResponse is not null)
         {
             currentPendingResponse.TrySetResult(null);
             currentPendingResponse = null;

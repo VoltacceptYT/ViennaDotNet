@@ -143,7 +143,7 @@ public class NetworkServer
                 return false;
 
             Channel? channel = channels.GetOrDefault(channelId, null);
-            if (channel != null)
+            if (channel is not null)
             {
                 if (parts[1] == "CLOSE")
                 {
@@ -162,7 +162,7 @@ public class NetworkServer
                 else
                 {
                     channel = handleChannelOpenCommand(channelId, parts[1]);
-                    if (channel != null)
+                    if (channel is not null)
                     {
                         channels[channelId] = channel;
                         return true;
@@ -370,7 +370,7 @@ public class NetworkServer
                 return;
             }
 
-            if (currentPendingResponse != null)
+            if (currentPendingResponse is not null)
             {
                 error();
                 return;
@@ -399,13 +399,13 @@ public class NetworkServer
                     sendMessage("ACK");
                     completableFuture.Task.ContinueWith(task =>
                     {
-                        if (currentPendingResponse != null)
+                        if (currentPendingResponse is not null)
                         {
                             if (currentPendingResponse != completableFuture)
                                 throw new InvalidOperationException();
 
                             currentPendingResponse = null;
-                            if (task.Result != null)
+                            if (task.Result is not null)
                                 sendMessage("REP " + task.Result);
                             else
                                 sendMessage("NREP");
@@ -502,7 +502,7 @@ public class NetworkServer
                 }
 
                 TaskCompletionSource<string?>? responseCompletableFuture = pendingResponses.JavaRemove(requestId);
-                if (responseCompletableFuture != null)
+                if (responseCompletableFuture is not null)
                     responseCompletableFuture.SetResult(null);
                 else
                     error();

@@ -54,7 +54,7 @@ public sealed class NbtType
     public static NbtType byClass(Type tagClass)
     {
         NbtType? type = BY_CLASS.GetOrDefault(tagClass);
-        if (type == null)
+        if (type is null)
             throw new ArgumentException("Tag of class " + tagClass + " does not exist", nameof(tagClass));
 
         return type;

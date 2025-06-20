@@ -2,6 +2,4 @@
 
 public sealed record BoostState(
 // TODO
-)
-{
-}
+);

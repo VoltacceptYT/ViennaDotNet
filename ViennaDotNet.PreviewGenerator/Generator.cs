@@ -21,7 +21,7 @@ public static class Generator
             for (int chunkZ = -CHUNK_RADIUS; chunkZ < CHUNK_RADIUS; chunkZ++)
             {
                 Chunk? chunk = Chunk.read(serverDataZip.getChunkNBT(chunkX, chunkZ));
-                if (chunk == null)
+                if (chunk is null)
                     Log.Error($"Could not convert chunk {chunkX}, {chunkZ}");
                 else
                     chunks.AddLast(chunk);
@@ -68,14 +68,14 @@ public static class Generator
                             );
                         }
                     })
-                    .Where(subChunk => subChunk != null);
+                    .Where(subChunk => subChunk is not null);
             })
             .ToArray()!;
 
         // block entities seem to not be used by the client when rendering the preview anyway?
         PreviewModel.BlockEntity[] blockEntities = [.. chunks
             .SelectMany(chunk => chunk.blockEntities)
-            .Where(blockEntity => blockEntity != null)
+            .Where(blockEntity => blockEntity is not null)
             .Select(blockEntity =>
             {
                 int type;

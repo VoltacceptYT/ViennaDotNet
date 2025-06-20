@@ -7,7 +7,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public static class CraftingCalculator
 {
-    public static State calculateState(long currentTime, CraftingSlot.ActiveJob activeJob, Catalog catalog)
+    public static State CalculateState(long currentTime, CraftingSlot.ActiveJob activeJob, Catalog catalog)
     {
         Catalog.RecipesCatalog.CraftingRecipe recipe = catalog.recipesCatalog.crafting.Where(craftingRecipe => craftingRecipe.id == activeJob.recipeId).First();
 
@@ -65,25 +65,25 @@ public static class CraftingCalculator
         );
     }
 
-    public record State(
-        int completedRounds,
-        int availableRounds,
-        int totalRounds,
-        InputItem[] input,
-        State.OutputItem output,
-        long nextCompletionTime,
-        long totalCompletionTime,
-        bool completed
+    public sealed record State(
+        int CompletedRounds,
+        int AvailableRounds,
+        int TotalRounds,
+        InputItem[] Input,
+        State.OutputItem Output,
+        long NextCompletionTime,
+        long TotalCompletionTime,
+        bool Completed
     )
     {
-        public record OutputItem(
-            string id,
-            int count
+        public sealed record OutputItem(
+            string Id,
+            int Count
         );
     }
 
     // TODO: make this configurable
-    public static FinishPrice calculateFinishPrice(int remainingTime)
+    public static FinishPrice CalculateFinishPrice(int remainingTime)
     {
         if (remainingTime < 0)
             throw new ArgumentException(nameof(remainingTime));
@@ -99,19 +99,14 @@ public static class CraftingCalculator
         return new FinishPrice(price, validFor);
     }
 
-    public record FinishPrice(
-        int price,
-        int validFor
-    )
-    {
-    }
+    public sealed record FinishPrice(
+        int Price,
+        int ValidFor
+    );
 
     // TODO: make this configurable
     public static int calculateUnlockPrice(int slotIndex)
-    {
-        if (slotIndex < 1 || slotIndex > 3)
-            throw new ArgumentOutOfRangeException(nameof(slotIndex));
-
-        return slotIndex * 5;
-    }
+        => slotIndex < 1 || slotIndex > 3 
+        ? throw new ArgumentOutOfRangeException(nameof(slotIndex))
+        : slotIndex * 5;
 }

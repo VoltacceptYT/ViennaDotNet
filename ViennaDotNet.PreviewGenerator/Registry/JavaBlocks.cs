@@ -38,7 +38,7 @@ public static class JavaBlocks
                 try
                 {
                     BedrockMapping? bedrockMapping = readBedrockMapping((JsonObject)element["bedrock"]!, jArray);
-                    if (bedrockMapping == null)
+                    if (bedrockMapping is null)
                     {
                         Log.Debug($"Ignoring Java block {name}");
                         continue;
@@ -80,7 +80,7 @@ public static class JavaBlocks
                     try
                     {
                         BedrockMapping? bedrockMapping = readBedrockMapping((JsonObject)stateElement["bedrock"]!, null);
-                        if (bedrockMapping == null)
+                        if (bedrockMapping is null)
                         {
                             Log.Debug($"Ignoring Java block {name}");
                             continue;
@@ -161,7 +161,7 @@ public static class JavaBlocks
                         if (blockEntityObject.TryGetPropertyValue("contents", out var contentsToken) && contentsToken!.GetValueKind() is not JsonValueKind.Null)
                         {
                             string contentsName = contentsToken.GetValue<string>()!;
-                            if (javaBlocksArray != null)
+                            if (javaBlocksArray is not null)
                             {
                                 contents = javaBlocksArray
                                     .Where(element => ((JsonObject)element!)["name"]!.GetValue<string>() == contentsName)
@@ -197,7 +197,7 @@ public static class JavaBlocks
                                     });
                             }
 
-                            if (contents == null)
+                            if (contents is null)
                                 throw new BedrockMappingFailException("Could not find contents for flower pot");
                         }
 
@@ -279,7 +279,7 @@ public static class JavaBlocks
     public static string? getName(int id, /*FabricRegistryManager?*/object? fabricRegistryManager)
     {
         string? name = map.GetOrDefault(id, null);
-        if (name == null && fabricRegistryManager != null)
+        if (name is null && fabricRegistryManager is not null)
             name = null;//fabricRegistryManager.getBlockName(id);
 
         return name;
@@ -288,10 +288,10 @@ public static class JavaBlocks
     public static BedrockMapping? getBedrockMapping(int javaId, /*FabricRegistryManager?*/object? fabricRegistryManager)
     {
         BedrockMapping? bedrockMapping = bedrockMap.GetOrDefault(javaId, null);
-        if (bedrockMapping == null && fabricRegistryManager != null)
+        if (bedrockMapping is null && fabricRegistryManager is not null)
         {
             string? fabricName = null;//fabricRegistryManager.getBlockName(javaId);
-            if (fabricName != null)
+            if (fabricName is not null)
                 bedrockMapping = bedrockNonVanillaMap.GetOrDefault(fabricName, null);
         }
 
@@ -301,7 +301,7 @@ public static class JavaBlocks
     public static BedrockMapping? getBedrockMapping(string javaName)
     {
         BedrockMapping? bedrockMapping = bedrockMapByName.GetOrDefault(javaName, null);
-        if (bedrockMapping == null)
+        if (bedrockMapping is null)
             bedrockMapping = bedrockNonVanillaMap.GetOrDefault(javaName, null);
 
         return bedrockMapping;

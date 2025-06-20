@@ -84,13 +84,13 @@ internal static class Program
 
         Log.Information("Connected to event bus");
 
-        string javaCmd = JavaLocator.locateJava();
+        string javaCmd = JavaLocator.Locate();
         Starter starter = new Starter(eventBusClient, options.EventBusConnectionString, options.PublicAddress, javaCmd, options.BridgeJar, options.ServerTemplateDir, options.FabricJarName, options.ConnectorPluginJar);
         InstanceManager instanceManager = new InstanceManager(eventBusClient, starter);
 
         AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
         {
-            instanceManager.shutdown();
+            instanceManager.Shutdown();
         };
 
         while (true)

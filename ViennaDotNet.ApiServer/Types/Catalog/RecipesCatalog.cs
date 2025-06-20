@@ -1,53 +1,53 @@
 ﻿namespace ViennaDotNet.ApiServer.Types.Catalog;
 
 public sealed record RecipesCatalog(
-    RecipesCatalog.CraftingRecipe[] crafting,
-    RecipesCatalog.SmeltingRecipe[] smelting
+    RecipesCatalog.CraftingRecipe[] Crafting,
+    RecipesCatalog.SmeltingRecipe[] Smelting
 )
 {
     public sealed record CraftingRecipe(
-        string id,
-        string category,
-        string duration,
-        CraftingRecipe.Ingredient[] ingredients,
-        CraftingRecipe.Output output,
-        CraftingRecipe.ReturnItem[] returnItems,
-        bool deprecated
+        string Id,
+        string Category,
+        string Duration,
+        CraftingRecipe.Ingredient[] Ingredients,
+        CraftingRecipe.OutputR Output,
+        CraftingRecipe.ReturnItem[] ReturnItems,
+        bool Deprecated
     )
     {
         public sealed record Ingredient(
-            string[] items,
-            int quantity
+            string[] Items,
+            int Quantity
         );
 
-        public sealed record Output(
-            string itemId,
-            int quantity
+        public sealed record OutputR(
+            string ItemId,
+            int Quantity
         );
 
         public sealed record ReturnItem(
-            string id,
-            int amount
+            string Id,
+            int Amount
         );
     }
 
     public sealed record SmeltingRecipe(
-        string id,
-        int heatRequired,
-        string inputItemId,
-        SmeltingRecipe.Output output,
-        SmeltingRecipe.ReturnItem[] returnItems,
+        string Id,
+        int HeatRequired,
+        string InputItemId,
+        SmeltingRecipe.OutputR Output,
+        SmeltingRecipe.ReturnItem[] ReturnItems,
         bool deprecated
     )
     {
-        public sealed record Output(
-            string itemId,
-            int quantity
+        public sealed record OutputR(
+            string ItemId,
+            int Quantity
         );
 
         public sealed record ReturnItem(
-            string id,
-            int amount
+            string Id,
+            int Amount
         );
     }
 }

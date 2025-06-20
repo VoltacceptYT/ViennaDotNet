@@ -78,19 +78,19 @@ internal sealed class Chunk
                         string javaName = javaPalette[javaBlocks[(y * 16 + z) * 16 + x]];
 
                         JavaBlocks.BedrockMapping? bedrockMapping = JavaBlocks.getBedrockMapping(javaName);
-                        if (bedrockMapping == null)
+                        if (bedrockMapping is null)
                         {
                             if (alreadyNotifiedMissingBlocks.Add(javaName))
                                 Log.Warning($"Chunk contained block with no mapping {javaName}");
                         }
 
                         // TODO: how to handle waterlogged blocks???
-                        int bedrockId = bedrockMapping != null ? bedrockMapping.id : BedrockBlocks.AIR;
+                        int bedrockId = bedrockMapping is not null ? bedrockMapping.id : BedrockBlocks.AIR;
                         blocks[(x * 256 + y + subchunkY * 16) * 16 + z] = bedrockId;
 
-                        JavaBlocks.BedrockMapping.BlockEntity? blockEntityMapping = bedrockMapping != null && bedrockMapping.blockEntity != null ? bedrockMapping.blockEntity : null;
-                        NbtMap? bedrockBlockEntityData = blockEntityMapping != null ? BlockEntityTranslator.translateBlockEntity(blockEntityMapping, null) : null;
-                        if (bedrockBlockEntityData != null)
+                        JavaBlocks.BedrockMapping.BlockEntity? blockEntityMapping = bedrockMapping is not null && bedrockMapping.blockEntity is not null ? bedrockMapping.blockEntity : null;
+                        NbtMap? bedrockBlockEntityData = blockEntityMapping is not null ? BlockEntityTranslator.translateBlockEntity(blockEntityMapping, null) : null;
+                        if (bedrockBlockEntityData is not null)
                             bedrockBlockEntityData = bedrockBlockEntityData.toBuilder().putInt("x", x + chunkX * 16).putInt("y", y + subchunkY * 16).putInt("z", z + chunkZ * 16).putBoolean("isMovable", false).build();
 
                         blockEntities[(x * 256 + y + subchunkY * 16) * 16 + z] = bedrockBlockEntityData;
@@ -112,11 +112,11 @@ internal sealed class Chunk
             BlockEntityInfo blockEntityInfo = new BlockEntityInfo(x, y, z, BlockEntityType.FURNACE, blockEntityCompoundTag);    // TODO: use proper type (currently this doesn't matter for any of our translator implementations)
 
             JavaBlocks.BedrockMapping.BlockEntity? blockEntityMapping = blockEntityMappings[(x * 256 + y) * 16 + z];
-            if (blockEntityMapping == null)
+            if (blockEntityMapping is null)
                 Log.Debug($"Ignoring block entity of type {type}");
 
-            NbtMap? bedrockBlockEntityData = blockEntityMapping != null ? BlockEntityTranslator.translateBlockEntity(blockEntityMapping, blockEntityInfo) : null;
-            if (bedrockBlockEntityData != null)
+            NbtMap? bedrockBlockEntityData = blockEntityMapping is not null ? BlockEntityTranslator.translateBlockEntity(blockEntityMapping, blockEntityInfo) : null;
+            if (bedrockBlockEntityData is not null)
                 bedrockBlockEntityData = bedrockBlockEntityData.toBuilder().putInt("x", x + chunkX * 16).putInt("y", y).putInt("z", z + chunkZ * 16).putBoolean("isMovable", false).build();
 
             blockEntities[(x * 256 + y) * 16 + z] = bedrockBlockEntityData;

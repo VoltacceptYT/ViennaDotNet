@@ -8,47 +8,49 @@ public class EarthApiResponse
     public object? Result { get; }
     public Dictionary<string, int?>? Updates { get; } = [];
 
-    public EarthApiResponse(object _results)
+    public EarthApiResponse(object results)
     {
-        Result = _results;
+        Result = results;
     }
 
-    public EarthApiResponse(object? _results, UpdatesResponse? _updates)
+    public EarthApiResponse(object? results, UpdatesResponse? updates)
     {
-        Result = _results;
-        if (_updates is null)
+        Result = results;
+        if (updates is null)
         {
             Updates = null;
         }
         else
         {
-            Updates.AddRange(_updates.map);
+            Updates.AddRange(updates.Map);
         }
     }
 
     public sealed class UpdatesResponse
     {
-        public Dictionary<string, int?> map = [];
+        public Dictionary<string, int?> Map = [];
 
         public UpdatesResponse(EarthDB.Results results)
         {
             Dictionary<string, int?> updates = results.getUpdates();
-            put(updates, "profile", "characterProfile");
-            put(updates, "inventory", "inventory");
-            put(updates, "crafting", "crafting");
-            put(updates, "smelting", "smelting");
-            put(updates, "boosts", "boosts");
-            put(updates, "buildplates", "buildplates");
-            put(updates, "journal", "playerJournal");
-            put(updates, "challenges", "challenges");
-            put(updates, "tokens", "tokens");
+            set(updates, "profile", "characterProfile");
+            set(updates, "inventory", "inventory");
+            set(updates, "crafting", "crafting");
+            set(updates, "smelting", "smelting");
+            set(updates, "boosts", "boosts");
+            set(updates, "buildplates", "buildplates");
+            set(updates, "journal", "playerJournal");
+            set(updates, "challenges", "challenges");
+            set(updates, "tokens", "tokens");
         }
 
-        private void put(Dictionary<string, int?> updates, string name, string @as)
+        private void set(Dictionary<string, int?> updates, string name, string @as)
         {
             int? version = updates.GetOrDefault(name, null);
-            if (version != null)
-                map[@as] = version;
+            if (version is not null)
+            {
+                Map[@as] = version;
+            }
         }
     }
 }

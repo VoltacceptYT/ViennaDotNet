@@ -7,17 +7,17 @@ namespace ViennaDotNet.Buildplate.Launcher;
 
 public class Starter
 {
-    private readonly EventBusClient eventBusClient;
+    private readonly EventBusClient _eventBusClient;
 
-    private readonly string publicAddress;
-    private readonly string javaCmd;
-    private readonly DirectoryInfo tmpDir;
-    private readonly string eventBusConnectionString;
+    private readonly string _publicAddress;
+    private readonly string _javaCmd;
+    private readonly DirectoryInfo _tmpDir;
+    private readonly string _eventBusConnectionString;
 
-    private readonly FileInfo fountainBridgeJar;
-    private readonly DirectoryInfo serverTemplateDir;
-    private readonly string fabricJarName;
-    private readonly FileInfo connectorPluginJar;
+    private readonly FileInfo _fountainBridgeJar;
+    private readonly DirectoryInfo _serverTemplateDir;
+    private readonly string _fabricJarName;
+    private readonly FileInfo _connectorPluginJar;
 
     // TODO: const ?
     private static readonly int BASE_PORT = 19132;
@@ -27,64 +27,67 @@ public class Starter
 
     public Starter(EventBusClient eventBusClient, string eventBusConnectionString, string publicAddress, string javaCmd, string bridgeJar, string serverTemplateDir, string fabricJarName, string connectorPluginJar)
     {
-        this.eventBusClient = eventBusClient;
+        _eventBusClient = eventBusClient;
 
-        this.publicAddress = publicAddress;
-        this.javaCmd = javaCmd;
-        this.tmpDir = new DirectoryInfo(Path.GetTempPath());
-        this.eventBusConnectionString = eventBusConnectionString;
+        _publicAddress = publicAddress;
+        _javaCmd = javaCmd;
+        _tmpDir = new DirectoryInfo(Path.GetTempPath());
+        _eventBusConnectionString = eventBusConnectionString;
 
-        this.fountainBridgeJar = new FileInfo(bridgeJar);
-        this.serverTemplateDir = new DirectoryInfo(serverTemplateDir);
-        this.fabricJarName = fabricJarName;
-        this.connectorPluginJar = new FileInfo(connectorPluginJar);
+        _fountainBridgeJar = new FileInfo(bridgeJar);
+        _serverTemplateDir = new DirectoryInfo(serverTemplateDir);
+        _fabricJarName = fabricJarName;
+        _connectorPluginJar = new FileInfo(connectorPluginJar);
     }
 
-    public Instance? startInstance(string instanceId, string? playerId, string buildplateId, Instance.BuildplateSource buildplateSource, bool survival, bool night, bool saveEnabled, InventoryType inventoryType, long? shutdownTime)
+    public Instance? StartInstance(string instanceId, string? playerId, string buildplateId, Instance.BuildplateSource buildplateSource, bool survival, bool night, bool saveEnabled, InventoryType inventoryType, long? shutdownTime)
     {
-        DirectoryInfo? baseDir = createInstanceBaseDir(instanceId);
+        DirectoryInfo? baseDir = CreateInstanceBaseDir(instanceId);
         if (baseDir is null)
         {
             return null;
         }
 
-        int port = findPort(portsInUse, BASE_PORT);
-        int serverInternalPort = findPort(serverInternalPortsInUse, SERVER_INTERNAL_BASE_PORT);
-        Instance instance = Instance.run(eventBusClient, playerId, buildplateId, buildplateSource, instanceId, survival, night, saveEnabled, inventoryType, shutdownTime, publicAddress, port, serverInternalPort, javaCmd, fountainBridgeJar, serverTemplateDir, fabricJarName, connectorPluginJar, baseDir, eventBusConnectionString);
+        int port = FindPort(portsInUse, BASE_PORT);
+        int serverInternalPort = FindPort(serverInternalPortsInUse, SERVER_INTERNAL_BASE_PORT);
+        Instance instance = Instance.Run(_eventBusClient, playerId, buildplateId, buildplateSource, instanceId, survival, night, saveEnabled, inventoryType, shutdownTime, _publicAddress, port, serverInternalPort, _javaCmd, _fountainBridgeJar, _serverTemplateDir, _fabricJarName, _connectorPluginJar, baseDir, _eventBusConnectionString);
         new Thread(() =>
         {
-            instance.waitForShutdown();
-            releasePort(portsInUse, port);
-            releasePort(serverInternalPortsInUse, serverInternalPort);
+            instance.WaitForShutdown();
+            ReleasePort(portsInUse, port);
+            ReleasePort(serverInternalPortsInUse, serverInternalPort);
         }).Start();
         return instance;
     }
 
-    private static int findPort(HashSet<int> portsInUse, int basePort)
+    private static int FindPort(HashSet<int> portsInUse, int basePort)
     {
         lock (portsInUse)
         {
             int port = basePort;
-            while (portsInUse.Contains(port))
+            while (!portsInUse.Add(port))
+            {
                 port++;
+            }
 
-            portsInUse.Add(port);
             return port;
         }
     }
 
-    private static void releasePort(HashSet<int> portsInUse, int port)
+    private static void ReleasePort(HashSet<int> portsInUse, int port)
     {
         lock (portsInUse)
         {
             if (!portsInUse.Remove(port))
+            {
                 throw new InvalidOperationException();
+            }
         }
     }
 
-    private DirectoryInfo? createInstanceBaseDir(string instanceId)
+    private DirectoryInfo? CreateInstanceBaseDir(string instanceId)
     {
-        DirectoryInfo file = new DirectoryInfo(Path.Combine(tmpDir.FullName, $"vienna-buildplate-instance_{instanceId}"));
+        DirectoryInfo file = new DirectoryInfo(Path.Combine(_tmpDir.FullName, $"vienna-buildplate-instance_{instanceId}"));
         if (!file.TryCreate())
         {
             Log.Error($"Error creating instance base directory for {instanceId}");

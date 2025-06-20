@@ -3,20 +3,20 @@
 namespace ViennaDotNet.ApiServer.Types.Boost;
 
 public sealed record Boosts(
-    Boosts.Potion?[] potions,
-    Boosts.MiniFig[] miniFigs,
-    Boosts.ActiveEffect[] activeEffects,
-    Dictionary<string, Boosts.ScenarioBoost[]> scenarioBoosts,
-    Boosts.StatusEffects statusEffects,
-    Dictionary<string, Boosts.MiniFigRecord> miniFigRecords,
-    string? expiration
+    Boosts.Potion?[] Potions,
+    Boosts.MiniFig[] MiniFigs,
+    Boosts.ActiveEffect[] ActiveEffects,
+    Dictionary<string, Boosts.ScenarioBoost[]> ScenarioBoosts,
+    Boosts.StatusEffectsR StatusEffects,
+    Dictionary<string, Boosts.MiniFigRecord> MiniFigRecords,
+    string? Expiration
 )
 {
     public sealed record Potion(
-        bool enabled,
-        string itemId,
-        string instanceId,
-        string expiration
+        bool Enabled,
+        string ItemId,
+        string InstanceId,
+        string Expiration
     );
 
     public sealed record MiniFig(
@@ -24,29 +24,28 @@ public sealed record Boosts(
     );
 
     public sealed record ActiveEffect(
-        Effect effect,
-        string expiration
+        Effect Effect,
+        string Expiration
     );
 
     public sealed record ScenarioBoost(
-        bool enabled,
-        string instanceId,
-        Effect[] effects,
-        string expiration
-
+        bool Enabled,
+        string InstanceId,
+        Effect[] Effects,
+        string Expiration
     );
 
-    public sealed record StatusEffects(
-        int? tappableInteractionRadius,
-        int? experiencePointRate,
-        int? itemExperiencePointRates,
-        int? attackDamageRate,
-        int? playerDefenseRate,
-        int? blockDamageRate,
-        int? maximumPlayerHealth,
-        int? craftingSpeed,
-        int? smeltingFuelIntensity,
-        float? foodHealthRate
+    public sealed record StatusEffectsR(
+        int? TappableInteractionRadius,
+        int? ExperiencePointRate,
+        int? ItemExperiencePointRates,
+        int? AttackDamageRate,
+        int? PlayerDefenseRate,
+        int? BlockDamageRate,
+        int? MaximumPlayerHealth,
+        int? CraftingSpeed,
+        int? SmeltingFuelIntensity,
+        float? FoodHealthRate
     );
 
     public sealed record MiniFigRecord(

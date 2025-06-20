@@ -1,20 +1,20 @@
 ﻿namespace ViennaDotNet.Common.Buildplate.Connector.Model;
 
 public sealed record InventoryResponse(
-    InventoryResponse.Item[] items,
-    InventoryResponse.HotbarItem?[] hotbar
+    InventoryResponse.Item[] Items,
+    InventoryResponse.HotbarItem?[] Hotbar
 )
 {
     public sealed record Item(
-        string id,
-        int? count,
-        string? instanceId,
-        int wear
+        string Id,
+        int? Count,
+        string? InstanceId,
+        int Wear
     );
 
     public sealed record HotbarItem(
-        string id,
-        int count,
-        string? instanceId
+        string Id,
+        int Count,
+        string? InstanceId
     );
 }

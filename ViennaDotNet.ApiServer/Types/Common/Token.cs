@@ -4,10 +4,10 @@ using System.Text.Json.Serialization;
 namespace ViennaDotNet.ApiServer.Types.Common;
 
 public sealed record Token(
-    Token.Type clientType,
-    Dictionary<string, string> clientProperties,
-    Rewards rewards,
-    Token.Lifetime lifetime
+    Token.Type ClientType,
+    Dictionary<string, string> ClientProperties,
+    Rewards Rewards,
+    Token.Lifetime Lifetime
 )
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]

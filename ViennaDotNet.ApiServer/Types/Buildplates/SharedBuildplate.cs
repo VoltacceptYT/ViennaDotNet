@@ -3,24 +3,24 @@
 namespace ViennaDotNet.ApiServer.Types.Buildplates;
 
 public sealed record SharedBuildplate(
-    string playerId,
-    string sharedOn,
-    SharedBuildplate.BuildplateData buildplateData,
+    string PlayerId,
+    string SharedOn,
+    SharedBuildplate.BuildplateDataR BuildplateData,
     Inventory.Inventory inventory
 )
 {
-    public sealed record BuildplateData(
-        Dimension dimension,
-        Offset offset,
-        int blocksPerMeter,
-        BuildplateData.Type type,
-        SurfaceOrientation surfaceOrientation,
-        string model,
-        int order
+    public sealed record BuildplateDataR(
+        Dimension Dimension,
+        Offset Offset,
+        int BlocksPerMeter,
+        BuildplateDataR.TypeE Type,
+        SurfaceOrientation SurfaceOrientation,
+        string Model,
+        int Order
     )
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public enum Type
+        public enum TypeE
         {
             [JsonStringEnumMemberName("Survival")] SURVIVAL,
         }

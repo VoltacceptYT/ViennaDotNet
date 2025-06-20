@@ -76,7 +76,7 @@ public static class BedrockBlocks
     public static Dictionary<string, object>? getState(int id)
     {
         BlockNameAndState? blockNameAndState = idToStateMap.GetOrDefault(id, null);
-        if (blockNameAndState == null)
+        if (blockNameAndState is null)
             return null;
 
         Dictionary<string, object> state = [];
@@ -87,7 +87,7 @@ public static class BedrockBlocks
     public static NbtMap? getStateNbt(int id)
     {
         BlockNameAndState? blockNameAndState = idToStateMap.GetOrDefault(id, null);
-        if (blockNameAndState == null)
+        if (blockNameAndState is null)
             return null;
 
         NbtMapBuilder builder = NbtMap.builder();

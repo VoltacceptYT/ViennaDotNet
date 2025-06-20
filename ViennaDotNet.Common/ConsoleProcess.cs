@@ -5,9 +5,9 @@ using ViennaDotNet.Common.Utils;
 namespace ViennaDotNet.Common;
 
 // from https://stackoverflow.com/a/50311340/15878562
-public class ConsoleProcess
+public sealed class ConsoleProcess
 {
-    private readonly string appName;
+    private readonly string _filePath;
     public readonly Process Process = new Process();
 
     public bool IORedirected { get; private set; }
@@ -37,7 +37,7 @@ public class ConsoleProcess
         if (redirect && useShellExecute)
             throw new InvalidOperationException($"Can't redirect std in/out when useShellExecute is true");
 
-        this.appName = appName;
+        this._filePath = appName;
 
         IORedirected = redirect;
 
@@ -81,7 +81,7 @@ public class ConsoleProcess
     {
         if (!IORedirected) throw new InvalidOperationException($"Can't write, because {nameof(IORedirected)} is false");
 
-        if (data == null)
+        if (data is null)
             return;
 
         Process.StandardInput.Write(data);
@@ -91,16 +91,14 @@ public class ConsoleProcess
     public void WriteLine(string data)
         => Write(data + Environment.NewLine);
 
-    protected virtual void OnProcessExited()
+    private void OnProcessExited()
         => ProcessExited?.Invoke(this, EventArgs.Empty);
 
     private void ProcessOnExited(object? sender, EventArgs eventArgs)
         => OnProcessExited();
 
-    public void StopAndWait(int timeout = 10 * 1000)
-    {
-        Process.StopGracefullyOrKill(timeout);
-    }
+    public void StopAndWait(int timeout = 15 * 1000)
+        => Process.StopGracefullyOrKill(timeout);
 
     private const int CTRL_C_EVENT = 0;
     [DllImport("kernel32.dll")]

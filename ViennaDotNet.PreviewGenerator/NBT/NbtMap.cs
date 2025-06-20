@@ -70,19 +70,19 @@ public class NbtMap// : IDictionary<string, object>
 
     public ICollection<string> keySet()
     {
-        if (_keySet == null) _keySet = _map.Keys;
+        if (_keySet is null) _keySet = _map.Keys;
         return _keySet;
     }
 
     public ICollection<KeyValuePair<string, object>> entrySet()
     {
-        if (_entrySet == null) _entrySet = _map;
+        if (_entrySet is null) _entrySet = _map;
         return _entrySet;
     }
 
     public ICollection<object> values()
     {
-        if (_values == null) _values = _map.Values;
+        if (_values is null) _values = _map.Values;
         return _values;
     }
 
@@ -403,9 +403,9 @@ public class NbtMap// : IDictionary<string, object>
             {
                 string key = e.Key;
                 object value = e.Value;
-                if (value == null)
+                if (value is null)
                 {
-                    if (!(m.get(key) == null && m.containsKey(key)))
+                    if (!(m.get(key) is null && m.containsKey(key)))
                         return false;
                 }
                 else

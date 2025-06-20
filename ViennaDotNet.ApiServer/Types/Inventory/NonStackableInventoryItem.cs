@@ -1,19 +1,19 @@
 ﻿namespace ViennaDotNet.ApiServer.Types.Inventory;
 
 public sealed record NonStackableInventoryItem(
-    string id,
-    NonStackableInventoryItem.Instance[] instances,
-    int fragments,
-    NonStackableInventoryItem.On unlocked,
-    NonStackableInventoryItem.On seen
+    string Id,
+    NonStackableInventoryItem.Instance[] Instances,
+    int Fragments,
+    NonStackableInventoryItem.OnR Unlocked,
+    NonStackableInventoryItem.OnR Seen
 )
 {
     public sealed record Instance(
-        string id,
-        float health
+        string Id,
+        float Health
     );
 
-    public sealed record On(
-        string on
+    public sealed record OnR(
+        string On
     );
 }

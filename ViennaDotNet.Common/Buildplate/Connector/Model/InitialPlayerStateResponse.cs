@@ -3,18 +3,18 @@
 namespace ViennaDotNet.Common.Buildplate.Connector.Model;
 
 public sealed record InitialPlayerStateResponse(
-    float health,
-    InitialPlayerStateResponse.BoostStatusEffect[] boostStatusEffects
+    float Health,
+    InitialPlayerStateResponse.BoostStatusEffect[] BoostStatusEffects
 )
 {
     public sealed record BoostStatusEffect(
-        BoostStatusEffect.Type type,
-        int value,
-        long remainingDuration
+        BoostStatusEffect.TypeE Type,
+        int Value,
+        long RemainingDuration
     )
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public enum Type
+        public enum TypeE
         {
             ADVENTURE_XP,
             DEFENSE,

@@ -1,14 +1,14 @@
 ﻿namespace ViennaDotNet.ApiServer.Types.Inventory;
 
 public sealed record StackableInventoryItem(
-    string id,
-    int owned,
-    int fragments,
-    StackableInventoryItem.On unlocked,
-    StackableInventoryItem.On seen
+    string Id,
+    int Owned,
+    int Fragments,
+    StackableInventoryItem.OnR Unlocked,
+    StackableInventoryItem.OnR Seen
 )
 {
-    public sealed record On(
-        string on
+    public sealed record OnR(
+        string On
     );
 }

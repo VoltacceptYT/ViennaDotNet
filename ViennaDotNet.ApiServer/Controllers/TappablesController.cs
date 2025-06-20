@@ -32,10 +32,10 @@ public class TappablesController : ControllerBase
 
         long requestStartedOn = HttpContext.GetTimestamp();
 
-        tappablesManager.notifyTileActive(playerId, lat, lon);
+        tappablesManager.NotifyTileActive(playerId, lat, lon);
 
-        TappablesManager.Tappable[] tappables = tappablesManager.getTappablesAround(lat, lon, 5.0);    // TODO: radius
-        TappablesManager.Encounter[] encounters = tappablesManager.getEncountersAround(lat, lon, 5.0);    // TODO: radius
+        TappablesManager.Tappable[] tappables = tappablesManager.GetTappablesAround(lat, lon, 5.0);    // TODO: radius
+        TappablesManager.Encounter[] encounters = tappablesManager.GetEncountersAround(lat, lon, 5.0);    // TODO: radius
 
         try
         {
@@ -45,38 +45,38 @@ public class TappablesController : ControllerBase
             RedeemedTappables redeemedTappables = (RedeemedTappables)results.Get("redeemedTappables").Value;
 
             IEnumerable<ActiveLocation> activeLocationTappables = tappables
-                .Where(tappable => tappable.spawnTime + tappable.validFor > requestStartedOn && !redeemedTappables.isRedeemed(tappable.id))
+                .Where(tappable => tappable.SpawnTime + tappable.ValidFor > requestStartedOn && !redeemedTappables.isRedeemed(tappable.Id))
                 .Select(tappable => new ActiveLocation(
-                    tappable.id,
-                    TappablesManager.locationToTileId(tappable.lat, tappable.lon),
-                    new Coordinate(tappable.lat, tappable.lon),
-                    TimeFormatter.FormatTime(tappable.spawnTime),
-                    TimeFormatter.FormatTime(tappable.spawnTime + tappable.validFor),
+                    tappable.Id,
+                    TappablesManager.LocationToTileId(tappable.Lat, tappable.Lon),
+                    new Coordinate(tappable.Lat, tappable.Lon),
+                    TimeFormatter.FormatTime(tappable.SpawnTime),
+                    TimeFormatter.FormatTime(tappable.SpawnTime + tappable.ValidFor),
                     ActiveLocation.Type.TAPPABLE,
-                    tappable.icon,
-                    new ActiveLocation.Metadata(U.RandomUuid().ToString(), Enum.Parse<Rarity>(tappable.rarity.ToString())),
-                    new ActiveLocation.TappableMetadata(Enum.Parse<Rarity>(tappable.rarity.ToString())),
+                    tappable.Icon,
+                    new ActiveLocation.MetadataR(U.RandomUuid().ToString(), Enum.Parse<Rarity>(tappable.Rarity.ToString())),
+                    new ActiveLocation.TappableMetadataR(Enum.Parse<Rarity>(tappable.Rarity.ToString())),
                     null
                 ));
 
             IEnumerable<ActiveLocation> activeLocationEncounters = encounters
-                .Where(encounter => encounter.spawnTime + encounter.validFor > requestStartedOn)
+                .Where(encounter => encounter.SpawnTime + encounter.ValidFor > requestStartedOn)
                 .Select(encounter => new ActiveLocation(
-                    encounter.id,
-                    TappablesManager.locationToTileId(encounter.lat, encounter.lon),
-                    new Coordinate(encounter.lat, encounter.lon),
-                    TimeFormatter.FormatTime(encounter.spawnTime),
-                    TimeFormatter.FormatTime(encounter.spawnTime + encounter.validFor),
+                    encounter.Id,
+                    TappablesManager.LocationToTileId(encounter.Lat, encounter.Lon),
+                    new Coordinate(encounter.Lat, encounter.Lon),
+                    TimeFormatter.FormatTime(encounter.SpawnTime),
+                    TimeFormatter.FormatTime(encounter.SpawnTime + encounter.ValidFor),
                     ActiveLocation.Type.ENCOUNTER,
-                    encounter.icon,
-                    new ActiveLocation.Metadata(U.RandomUuid().ToString(), Enum.Parse<Rarity>(encounter.rarity.ToString())),
+                    encounter.Icon,
+                    new ActiveLocation.MetadataR(U.RandomUuid().ToString(), Enum.Parse<Rarity>(encounter.Rarity.ToString())),
                     null,
                     new ActiveLocation.EncounterMetadata(
                         ActiveLocation.EncounterMetadata.EncounterType.SHORT_4X4_PEACEFUL,    // TODO
                                                                                               //UUID.randomUUID().toString(),    // TODO: what is this field for and does it matter what we put here?
-                        encounter.id,
-                        encounter.encounterBuildplateId,
-                        ActiveLocation.EncounterMetadata.AnchorState.OFF,
+                        encounter.Id,
+                        encounter.EncounterBuildplateId,
+                        ActiveLocation.EncounterMetadata.AnchorStateE.OFF,
                         "",
                         ""
                     )
@@ -111,8 +111,8 @@ public class TappablesController : ControllerBase
         // request.timestamp
         long requestStartedOn = HttpContext.GetTimestamp();
 
-        TappablesManager.Tappable? tappable = tappablesManager.getTappableWithId(tappableRequest.id, tileId);
-        if (tappable == null || !tappablesManager.isTappableValidFor(tappable, requestStartedOn, tappableRequest.playerCoordinate.latitude, tappableRequest.playerCoordinate.longitude))
+        TappablesManager.Tappable? tappable = tappablesManager.GetTappableWithId(tappableRequest.Id, tileId);
+        if (tappable is null || !tappablesManager.IsTappableValidFor(tappable, requestStartedOn, tappableRequest.PlayerCoordinate.Latitude, tappableRequest.PlayerCoordinate.Longitude))
         {
             return BadRequest();
         }
@@ -129,7 +129,7 @@ public class TappablesController : ControllerBase
 
                     RedeemedTappables redeemedTappables = (RedeemedTappables)results1.Get("redeemedTappables").Value;
 
-                    if (redeemedTappables.isRedeemed(tappable.id))
+                    if (redeemedTappables.isRedeemed(tappable.Id))
                     {
                         query.Extra("success", false);
                         return query;
@@ -138,7 +138,7 @@ public class TappablesController : ControllerBase
                     int experiencePointsGlobalMultiplier = 0;
 
                     Dictionary<string, int> experiencePointsPerItemMultiplier = [];
-                    foreach (var effect in BoostUtils.getActiveEffects(boosts, requestStartedOn, staticData.catalog.itemsCatalog))
+                    foreach (var effect in BoostUtils.GetActiveEffects(boosts, requestStartedOn, staticData.catalog.itemsCatalog))
                     {
                         if (effect.type is Catalog.ItemsCatalog.Item.BoostInfo.Effect.Type.ITEM_XP)
                         {
@@ -158,25 +158,25 @@ public class TappablesController : ControllerBase
 
                     var rewards = new Utils.Rewards();
 
-                    foreach (TappablesManager.Tappable.Item item in tappable.items)
+                    foreach (TappablesManager.Tappable.Item item in tappable.Items)
                     {
-                        rewards.addItem(item.id, item.count);
-                        int experiencePoints = staticData.catalog.itemsCatalog.getItem(item.id)!.experience.tappable;
-                        int experiencePointsMultiplier = experiencePointsGlobalMultiplier + experiencePointsPerItemMultiplier.GetValueOrDefault(item.id);
+                        rewards.addItem(item.Id, item.Count);
+                        int experiencePoints = staticData.catalog.itemsCatalog.getItem(item.Id)!.experience.tappable;
+                        int experiencePointsMultiplier = experiencePointsGlobalMultiplier + experiencePointsPerItemMultiplier.GetValueOrDefault(item.Id);
                         if (experiencePointsMultiplier > 0)
                         {
                             experiencePoints = (experiencePoints * (experiencePointsMultiplier + 100)) / 100;
                         }
 
-                        rewards.addExperiencePoints(experiencePoints * item.count);
+                        rewards.addExperiencePoints(experiencePoints * item.Count);
                     }
 
                     rewards.addRubies(1); // TODO
 
-                    redeemedTappables.add(tappable.id, tappable.spawnTime + tappable.validFor);
+                    redeemedTappables.add(tappable.Id, tappable.SpawnTime + tappable.ValidFor);
                     redeemedTappables.prune(requestStartedOn);
                     query.Update("redeemedTappables", playerId, redeemedTappables);
-                    query.Then(ActivityLogUtils.addEntry(playerId, new ActivityLog.TappableEntry(requestStartedOn, rewards.toDBRewardsModel())));
+                    query.Then(ActivityLogUtils.AddEntry(playerId, new ActivityLog.TappableEntry(requestStartedOn, rewards.ToDBRewardsModel())));
                     query.Then(rewards.toRedeemQuery(playerId, requestStartedOn, staticData));
                     query.Then(results2 => new EarthDB.Query(false).Extra("success", true).Extra("rewards", rewards));
 
@@ -191,7 +191,7 @@ public class TappablesController : ControllerBase
                     { "token", new Token(
                         Token.Type.TAPPABLE,
                         [],
-                        ((Utils.Rewards) results.getExtra("rewards")).toApiResponse(),
+                        ((Utils.Rewards) results.getExtra("rewards")).ToApiResponse(),
                         Token.Lifetime.PERSISTENT
                     ) },
                     { "updates", null }
@@ -238,7 +238,7 @@ public class TappablesController : ControllerBase
     }
 
     private sealed record TappableRequest(
-        string id,
-        Coordinate playerCoordinate
+        string Id,
+        Coordinate PlayerCoordinate
     );
 }

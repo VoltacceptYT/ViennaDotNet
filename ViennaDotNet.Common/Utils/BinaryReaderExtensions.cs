@@ -1,41 +1,18 @@
-﻿namespace ViennaDotNet.Common.Utils;
+﻿using System.Buffers.Binary;
+
+namespace ViennaDotNet.Common.Utils;
 
 public static class BinaryReaderExtensions
 {
-    // Note this MODIFIES THE GIVEN ARRAY then returns a reference to the modified array.
-    public static byte[] Reverse(this byte[] b)
+    public static uint ReadUInt32BE(this BinaryReader reader)
     {
-        Array.Reverse(b);
-        return b;
-    }
+        Span<byte> buffer = stackalloc byte[sizeof(uint)];
+        int read = reader.Read(buffer);
+        if (read != sizeof(uint))
+        {
+            throw new EndOfStreamException($"{sizeof(uint)} bytes required from stream, but only {read} returned.");
+        }
 
-    public static ushort ReadUInt16BE(this BinaryReader binRdr)
-    {
-        return BitConverter.ToUInt16(binRdr.ReadBytesRequired(sizeof(ushort)).Reverse(), 0);
-    }
-
-    public static short ReadInt16BE(this BinaryReader binRdr)
-    {
-        return BitConverter.ToInt16(binRdr.ReadBytesRequired(sizeof(short)).Reverse(), 0);
-    }
-
-    public static uint ReadUInt32BE(this BinaryReader binRdr)
-    {
-        return BitConverter.ToUInt32(binRdr.ReadBytesRequired(sizeof(uint)).Reverse(), 0);
-    }
-
-    public static int ReadInt32BE(this BinaryReader binRdr)
-    {
-        return BitConverter.ToInt32(binRdr.ReadBytesRequired(sizeof(int)).Reverse(), 0);
-    }
-
-    public static byte[] ReadBytesRequired(this BinaryReader binRdr, int byteCount)
-    {
-        byte[] result = binRdr.ReadBytes(byteCount);
-
-        if (result.Length != byteCount)
-            throw new EndOfStreamException(string.Format("{0} bytes required from stream, but only {1} returned.", byteCount, result.Length));
-
-        return result;
+        return BinaryPrimitives.ReadUInt32BigEndian(buffer);
     }
 }

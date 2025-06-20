@@ -10,14 +10,11 @@ public static class IOExtenions
         if (!dirInfo.Exists) return false;
 
         if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+        {
             return true;
+        }
 
         return true;
-    }
-
-    public static DirectoryInfo? GetParentFile(this FileInfo info)
-    {
-        return Directory.GetParent(Path.GetDirectoryName(info.FullName)!);
     }
 
     /// <summary>
@@ -47,7 +44,10 @@ public static class IOExtenions
 
         try
         {
-            if (!info.Exists) return false;
+            if (!info.Exists)
+            {
+                return false;
+            }
 
             return true;
         }

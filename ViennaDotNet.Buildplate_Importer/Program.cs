@@ -326,7 +326,7 @@ internal static class Program
     private static async Task<bool> storeBuildplate(EarthDB earthDB, EventBusClient? eventBusClient, ObjectStoreClient objectStoreClient, string playerId, string buildplateId, WorldData worldData, long timestamp)
     {
         string? preview;
-        if (eventBusClient != null)
+        if (eventBusClient is not null)
         {
             Log.Information("Generating preview");
             RequestSender requestSender = eventBusClient.addRequestSender();
@@ -353,8 +353,8 @@ internal static class Program
         }
 
         Log.Information("Storing preview");
-        string? previewObjectId = (string?)await objectStoreClient.store(preview != null ? Encoding.ASCII.GetBytes(preview) : []).Task;
-        if (previewObjectId == null)
+        string? previewObjectId = (string?)await objectStoreClient.store(preview is not null ? Encoding.ASCII.GetBytes(preview) : []).Task;
+        if (previewObjectId is null)
         {
             Log.Error("Could not store preview object in object store");
             return false;

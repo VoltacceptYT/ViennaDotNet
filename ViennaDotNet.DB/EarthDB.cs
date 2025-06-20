@@ -285,7 +285,7 @@ public sealed class EarthDB : IDisposable
                 }
 
                 int resultVersion;
-                if (version != null)
+                if (version is not null)
                 {
                     using (var command = transaction.Connection!.CreateCommand())
                     {
@@ -431,7 +431,7 @@ public sealed class EarthDB : IDisposable
                 }
 
                 int resultVersion;
-                if (version != null)
+                if (version is not null)
                 {
                     using (var command = transaction.Connection!.CreateCommand())
                     {

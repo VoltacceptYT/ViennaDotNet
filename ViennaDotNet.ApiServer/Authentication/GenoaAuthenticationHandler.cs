@@ -18,11 +18,11 @@ public class GenoaAuthenticationHandler : AuthenticationHandler<AuthenticationSc
 
         // skip authentication if endpoint has [AllowAnonymous] attribute
         var endpoint = Context.GetEndpoint();
-        if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
+        if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() is not null)
             return AuthenticateResult.NoResult();
 
         // Check if we should really authenticate
-        if (endpoint?.Metadata?.GetMetadata<IAuthorizeData>() == null)
+        if (endpoint?.Metadata?.GetMetadata<IAuthorizeData>() is null)
             return AuthenticateResult.NoResult();
 
         if (!Request.Headers.ContainsKey("Authorization"))

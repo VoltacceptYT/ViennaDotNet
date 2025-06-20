@@ -2,103 +2,103 @@
 using ViennaDotNet.ApiServer.Types.Common;
 using static ViennaDotNet.ApiServer.Types.Catalog.ItemsCatalog;
 using static ViennaDotNet.ApiServer.Types.Catalog.ItemsCatalog.EfficiencyCategory;
-using static ViennaDotNet.ApiServer.Types.Catalog.ItemsCatalog.Item;
-using static ViennaDotNet.ApiServer.Types.Catalog.ItemsCatalog.Item.ItemData;
+using static ViennaDotNet.ApiServer.Types.Catalog.ItemsCatalog.ItemR;
+using static ViennaDotNet.ApiServer.Types.Catalog.ItemsCatalog.ItemR.ItemData;
 
 namespace ViennaDotNet.ApiServer.Types.Catalog;
 
 public sealed record ItemsCatalog(
-    Item[] items,
-    Dictionary<string, EfficiencyCategory> efficiencyCategories
+    ItemR[] Items,
+    Dictionary<string, EfficiencyCategory> EfficiencyCategories
 )
 {
-    public sealed record Item(
-        string id,
-        ItemData item,
-        string category,
-        Rarity rarity,
-        int fragmentsRequired,
-        bool stacks,
-        BurnRate? burnRate,
-        ReturnItem[] fuelReturnItems,
-        ReturnItem[] consumeReturnItems,
-        int? experience,
-        Dictionary<string, int?> experiencePoints,
-        bool deprecated
+    public sealed record ItemR(
+        string Id,
+        ItemData Item,
+        string Category,
+        Rarity Rarity,
+        int FragmentsRequired,
+        bool Stacks,
+        BurnRate? BurnRate,
+        ReturnItem[] FuelReturnItems,
+        ReturnItem[] ConsumeReturnItems,
+        int? Experience,
+        Dictionary<string, int?> ExperiencePoints,
+        bool Deprecated
     )
     {
         public sealed record ItemData(
-            string name,
-            int? aux,
-            string type,
-            string useType,
-            double? tapSpeed,
-            double? heal,
-            double? nutrition,
-            double? mobDamage,
-            double? blockDamage,
-            double? health,
-            BlockMetadata? blockMetadata,
-            ItemMetadata? itemMetadata,
-            BoostMetadata? boostMetadata,
-            JournalMetadata? journalMetadata,
-            AudioMetadata? audioMetadata,
-            IDictionary clientProperties
+            string Name,
+            int? Aux,
+            string Type,
+            string UseType,
+            double? TapSpeed,
+            double? Heal,
+            double? Nutrition,
+            double? MobDamage,
+            double? BlockDamage,
+            double? Health,
+            BlockMetadataR? BlockMetadata,
+            ItemMetadataR? ItemMetadata,
+            BoostMetadata? BoostMetadata,
+            JournalMetadataR? JournalMetadata,
+            AudioMetadataR? AudioMetadata,
+            IDictionary ClientProperties
         )
         {
-            public sealed record BlockMetadata(
-                double? health,
-                string? efficiencyCategory
+            public sealed record BlockMetadataR(
+                double? Health,
+                string? EfficiencyCategory
             );
 
-            public sealed record ItemMetadata(
-                string useType,
-                string alternativeUseType,
-                double? mobDamage,
-                double? blockDamage,
-                double? weakDamage,
-                double? nutrition,
-                double? heal,
-                string? efficiencyType,
-                double? maxHealth
+            public sealed record ItemMetadataR(
+                string UseType,
+                string AlternativeUseType,
+                double? MobDamage,
+                double? BlockDamage,
+                double? WeakDamage,
+                double? Nutrition,
+                double? Heal,
+                string? EfficiencyType,
+                double? MaxHealth
             );
 
-            public sealed record JournalMetadata(
-                string groupKey,
-                int experience,
-                int order,
-                string behavior,
-                string biome
+            public sealed record JournalMetadataR(
+                string GroupKey,
+                int Experience,
+                int Order,
+                string Behavior,
+                string Biome
             );
 
-            public sealed record AudioMetadata(
-                Dictionary<string, string> sounds,
-                string defaultSound
+            public sealed record AudioMetadataR(
+                Dictionary<string, string> Sounds,
+                string DefaultSound
             );
         }
 
         public sealed record ReturnItem(
-            string id,
-            int amount
+            string Id,
+            int Amount
         );
     }
 
     public sealed record EfficiencyCategory(
-        EfficiencyMap efficiencyMap
+        EfficiencyMapR EfficiencyMap
     )
     {
-        public sealed record EfficiencyMap(
-            float hand,
-            float hoe,
-            float axe,
-            float shovel,
-            float pickaxe_1,
-            float pickaxe_2,
-            float pickaxe_3,
-            float pickaxe_4,
-            float pickaxe_5,
-            float sword,
-            float sheers
+        public sealed record EfficiencyMapR(
+            float Hand,
+            float Hoe,
+            float Axe,
+            float Shovel,
+            float Pickaxe_1,
+            float Pickaxe_2,
+            float Pickaxe_3,
+            float Pickaxe_4,
+            float Pickaxe_5,
+            float Sword,
+            float Sheers
         );
     }
 }

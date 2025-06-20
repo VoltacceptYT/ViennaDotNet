@@ -3,16 +3,16 @@
 namespace ViennaDotNet.ApiServer.Types.Catalog;
 
 public sealed record JournalCatalog(
-    Dictionary<string, Item> items
+    Dictionary<string, Item> Items
 )
 {
     public sealed record Item(
-        string referenceId,
-        string parentCollection,
-        int overallOrder,
-        int collectionOrder,
-        string? defaultSound,
-        bool deprecated,
-        string toolsVersion
+        string ReferenceId,
+        string ParentCollection,
+        int OverallOrder,
+        int CollectionOrder,
+        string? DefaultSound,
+        bool Deprecated,
+        string ToolsVersion
     );
 }

@@ -3,10 +3,11 @@
 public static class Files
 {
     public static void WalkFileTree(string startPath, FileVisitor visitor)
-        => walkFileTree(startPath, visitor, 0);
-    private static FileVisitResult walkFileTree(string path, FileVisitor visitor, int depth)
+        => WalkFileTree(startPath, visitor, 0);
+
+    private static FileVisitResult WalkFileTree(string path, FileVisitor visitor, int depth)
     {
-        FileVisitResult result = visitor.PreVisitDirectory != null ? visitor.PreVisitDirectory(path) : FileVisitResult.CONTINUE;
+        FileVisitResult result = visitor.PreVisitDirectory is not null ? visitor.PreVisitDirectory(path) : FileVisitResult.CONTINUE;
         if (result != FileVisitResult.CONTINUE)
         {
             if (result == FileVisitResult.SKIP_SUBTREE)
@@ -19,14 +20,14 @@ public static class Files
         {
             foreach (string file in Directory.EnumerateFiles(path))
             {
-                result = visitor.VisitFile != null ? visitor.VisitFile(file) : FileVisitResult.CONTINUE;
+                result = visitor.VisitFile is not null ? visitor.VisitFile(file) : FileVisitResult.CONTINUE;
                 if (result != FileVisitResult.CONTINUE)
                     return result;
             }
         }
         catch (IOException ex)
         {
-            result = visitor.VisitFileFailed != null ? visitor.VisitFileFailed(path, ex) : FileVisitResult.CONTINUE;
+            result = visitor.VisitFileFailed is not null ? visitor.VisitFileFailed(path, ex) : FileVisitResult.CONTINUE;
             if (result != FileVisitResult.CONTINUE)
                 return result;
         }
@@ -35,7 +36,7 @@ public static class Files
         {
             foreach (string subdir in Directory.GetDirectories(path))
             {
-                result = walkFileTree(subdir, visitor, depth + 1);
+                result = WalkFileTree(subdir, visitor, depth + 1);
                 if (result == FileVisitResult.SKIP_SIBLINGS)
                     return FileVisitResult.CONTINUE;
                 else if (result != FileVisitResult.CONTINUE)
@@ -44,11 +45,11 @@ public static class Files
         }
         catch (IOException ex)
         {
-            result = visitor.PostVisitDirectory != null ? visitor.PostVisitDirectory(path, ex) : FileVisitResult.CONTINUE;
+            result = visitor.PostVisitDirectory is not null ? visitor.PostVisitDirectory(path, ex) : FileVisitResult.CONTINUE;
             if (result != FileVisitResult.CONTINUE)
                 return result;
         }
 
-        return visitor.PostVisitDirectory != null ? visitor.PostVisitDirectory(path, null) : FileVisitResult.CONTINUE;
+        return visitor.PostVisitDirectory is not null ? visitor.PostVisitDirectory(path, null) : FileVisitResult.CONTINUE;
     }
 }

@@ -68,7 +68,7 @@ public class TappableGenerator
                 }
             }
 
-            if (dropSet == null)
+            if (dropSet is null)
             {
                 throw new InvalidOperationException();
             }

@@ -7,7 +7,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public sealed class LevelUtils
 {
-    public static EarthDB.Query checkAndHandlePlayerLevelUp(string playerId, long currentTime, StaticData.StaticData staticData)
+    public static EarthDB.Query CheckAndHandlePlayerLevelUp(string playerId, long currentTime, StaticData.StaticData staticData)
     {
         EarthDB.Query getQuery = new EarthDB.Query(true);
         getQuery.Get("profile", playerId, typeof(Profile));
@@ -20,8 +20,8 @@ public sealed class LevelUtils
             {
                 changed = true;
                 profile.level++;
-                Rewards rewards = makeLevelRewards(staticData.levels.levels[profile.level - 2]);
-                updateQuery.Then(TokenUtils.addToken(playerId, new LevelUpToken(profile.level, rewards.toDBRewardsModel())), false);
+                Rewards rewards = MakeLevelRewards(staticData.levels.levels[profile.level - 2]);
+                updateQuery.Then(TokenUtils.AddToken(playerId, new LevelUpToken(profile.level, rewards.ToDBRewardsModel())), false);
             }
 
             if (changed)
@@ -33,7 +33,7 @@ public sealed class LevelUtils
         return getQuery;
     }
 
-    public static Rewards makeLevelRewards(Levels.Level level)
+    public static Rewards MakeLevelRewards(Levels.Level level)
     {
         Rewards rewards = new Rewards();
         if (level.rubies > 0)

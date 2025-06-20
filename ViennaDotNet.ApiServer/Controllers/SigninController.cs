@@ -25,7 +25,7 @@ public partial class SigninController : ControllerBase
         SigninRequest? signinRequest = await Request.Body.AsJsonAsync<SigninRequest>(cancellationToken);
 
         string[]? parts = null;
-        if (signinRequest is null || (parts = signinRequest.sessionTicket.Split('-')).Length < 2)
+        if (signinRequest is null || (parts = signinRequest.SessionTicket.Split('-')).Length < 2)
         {
             Log.Error($"Sign in request null or parts bad ({parts?.Length ?? -1})");
             return BadRequest();
@@ -58,5 +58,5 @@ public partial class SigninController : ControllerBase
         return Content(str, "application/json");
     }
 
-    private sealed record SigninRequest(string sessionTicket);
+    private sealed record SigninRequest(string SessionTicket);
 }

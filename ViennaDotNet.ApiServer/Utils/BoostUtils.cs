@@ -10,7 +10,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public static class BoostUtils
 {
-    public static Catalog.ItemsCatalog.Item.BoostInfo.Effect[] getActiveEffects(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
+    public static Catalog.ItemsCatalog.Item.BoostInfo.Effect[] GetActiveEffects(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
     {
         Dictionary<string, Catalog.ItemsCatalog.Item.BoostInfo> activeBoostsInfo = [];
         foreach (var activeBoost in boosts.activeBoosts)
@@ -60,20 +60,20 @@ public static class BoostUtils
     }
 
     public sealed record StatModiferValues(
-        int maxPlayerHealthMultiplier,
-        int attackMultiplier,
-        int defenseMultiplier,
-        int foodMultiplier,
-        int miningSpeedMultiplier,
-        int craftingSpeedMultiplier,
-        int smeltingSpeedMultiplier,
-        int tappableInteractionRadiusExtraMeters,
-        bool keepHotbar,
-        bool keepInventory,
-        bool keepXp
+        int MaxPlayerHealthMultiplier,
+        int AttackMultiplier,
+        int DefenseMultiplier,
+        int FoodMultiplier,
+        int MiningSpeedMultiplier,
+        int CraftingSpeedMultiplier,
+        int SmeltingSpeedMultiplier,
+        int TappableInteractionRadiusExtraMeters,
+        bool KeepHotbar,
+        bool KeepInventory,
+        bool KeepXp
     );
 
-    public static StatModiferValues getActiveStatModifiers(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
+    public static StatModiferValues GetActiveStatModifiers(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
     {
         int maxPlayerHealth = 0;
         int attackMultiplier = 0;
@@ -87,7 +87,7 @@ public static class BoostUtils
         bool keepInventory = false;
         bool keepXp = false;
 
-        foreach (var effect in BoostUtils.getActiveEffects(boosts, currentTime, itemsCatalog))
+        foreach (var effect in BoostUtils.GetActiveEffects(boosts, currentTime, itemsCatalog))
         {
             switch (effect.type)
             {
@@ -142,10 +142,10 @@ public static class BoostUtils
         );
     }
 
-    public static int getMaxPlayerHealth(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
-        => 20 + (20 * BoostUtils.getActiveStatModifiers(boosts, currentTime, itemsCatalog).maxPlayerHealthMultiplier) / 100;
+    public static int GetMaxPlayerHealth(Boosts boosts, long currentTime, Catalog.ItemsCatalog itemsCatalog)
+        => 20 + (20 * BoostUtils.GetActiveStatModifiers(boosts, currentTime, itemsCatalog).MaxPlayerHealthMultiplier) / 100;
 
-    public static Effect boostEffectToApiResponse(Catalog.ItemsCatalog.Item.BoostInfo.Effect effect, long boostDuration)
+    public static Effect BoostEffectToApiResponse(Catalog.ItemsCatalog.Item.BoostInfo.Effect effect, long boostDuration)
     {
         string effectTypeString = effect.type switch
         {

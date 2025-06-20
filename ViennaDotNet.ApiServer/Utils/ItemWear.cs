@@ -5,7 +5,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public static class ItemWear
 {
-    public static float wearToHealth(string itemId, int wear, Catalog.ItemsCatalog itemsCatalog)
+    public static float WearToHealth(string itemId, int wear, Catalog.ItemsCatalog itemsCatalog)
     {
         Catalog.ItemsCatalog.Item? catalogItem = itemsCatalog.getItem(itemId);
 

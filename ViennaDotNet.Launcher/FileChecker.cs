@@ -143,7 +143,7 @@ internal static class FileChecker
             {
                 logger.Information("Detected that server was not setup, running");
 
-                string javaExe = JavaLocator.locateJava(logger);
+                string javaExe = JavaLocator.Locate(logger);
 
                 bool useShellExecute = false;
 
@@ -190,7 +190,7 @@ internal static class FileChecker
 
                 logger.Information("Running server to download/generate rest of the files, close it after it starts up");
 
-                string javaExe = JavaLocator.locateJava(logger);
+                string javaExe = JavaLocator.Locate(logger);
 
                 bool useShellExecute = true;
 

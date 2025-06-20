@@ -2,23 +2,23 @@
 
 // TODO: determine format
 public sealed record Rewards(
-    int? rubies,
-    int? experiencePoints,
-    int? level,
-    Rewards.Item[] inventory,
-    string[] buildplates,
-    Rewards.Challenge[] challenges,
-    string[] personaItems,
-    Rewards.UtilityBlock[] utilityBlocks
+    int? Rubies,
+    int? ExperiencePoints,
+    int? Level,
+    Rewards.Item[] Inventory,
+    string[] Buildplates,
+    Rewards.Challenge[] Challenges,
+    string[] PersonaItems,
+    Rewards.UtilityBlock[] UtilityBlocks
 )
 {
     public sealed record Item(
-        string id,
-        int amount
+        string Id,
+        int Amount
     );
 
     public sealed record Challenge(
-        string id
+        string Id
     );
 
     public sealed record UtilityBlock();

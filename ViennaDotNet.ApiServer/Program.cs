@@ -157,7 +157,7 @@ public static class Program
         tappablesManager = new TappablesManager(eventBus);
         buildplateInstancesManager = new BuildplateInstancesManager(eventBus);
 
-        BuildplateInstanceRequestHandler.start(DB, eventBus, objectStore, staticData.catalog);
+        BuildplateInstanceRequestHandler.Start(DB, eventBus, objectStore, staticData.catalog);
 
         CreateHostBuilder(args, options.HttpPort).Build().Run();
 

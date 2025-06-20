@@ -15,24 +15,24 @@ namespace ViennaDotNet.ApiServer.Controllers;
 public class ChallengesController : ControllerBase
 {
     private sealed record ChallengeRecord(
-        string referenceId,
-        string? parentId,
-        string groupId,
-        string duration,
-        string type,
-        string category,
-        Rarity? rarity,
-        int order,
-        string endTimeUtc,
-        string state,
-        bool isComplete,
-        int percentComplete,
-        int currentCount,
-        int totalThreshold,
-        string[] prerequisiteIds,
-        string prerequisiteLogicalCondition,
-        Rewards rewards,
-        object clientProperties
+        string ReferenceId,
+        string? ParentId,
+        string GroupId,
+        string Duration,
+        string Type,
+        string Category,
+        Rarity? Rarity,
+        int Order,
+        string EndTimeUtc,
+        string State,
+        bool IsComplete,
+        int PercentComplete,
+        int CurrentCount,
+        int TotalThreshold,
+        string[] PrerequisiteIds,
+        string PrerequisiteLogicalCondition,
+        Rewards Rewards,
+        object ClientProperties
     );
 
     [HttpGet]

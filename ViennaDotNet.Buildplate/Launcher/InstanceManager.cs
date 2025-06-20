@@ -10,12 +10,12 @@ namespace ViennaDotNet.Buildplate.Launcher;
 
 public class InstanceManager
 {
-    private readonly Starter starter;
+    private readonly Starter _starter;
 
-    private readonly Publisher publisher;
-    private readonly RequestHandler requestHandler;
-    private int runningInstanceCount = 0;
-    private bool shuttingDown = false;
+    private readonly Publisher _publisher;
+    private readonly RequestHandler _requestHandler;
+    private int _runningInstanceCount = 0;
+    private bool _shuttingDown = false;
     private readonly object _lock = new();
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -29,48 +29,48 @@ public class InstanceManager
     }
 
     private sealed record StartRequest(
-        string? playerId,
-        string? encounterId,
-        string buildplateId,
-        bool night,
-        InstanceType type,
-        long shutdownTime
+        string? PlayerId,
+        string? EncounterId,
+        string BuildplateId,
+        bool Night,
+        InstanceType Type,
+        long ShutdownTime
     );
 
     private sealed record StartNotification(
-        string instanceId,
-        string? playerId,
-        string? encounterId,
-        string buildplateId,
-        string address,
-        int port,
-        InstanceType type
+        string InstanceId,
+        string? PlayerId,
+        string? EncounterId,
+        string BuildplateId,
+        string Address,
+        int Port,
+        InstanceType Type
     );
 
     private sealed record PreviewRequest(
-        string serverDataBase64,
-        bool night
+        string ServerDataBase64,
+        bool Night
     );
 
     public InstanceManager(EventBusClient eventBusClient, Starter starter)
     {
-        this.starter = starter;
+        _starter = starter;
 
-        publisher = eventBusClient.addPublisher();
+        _publisher = eventBusClient.addPublisher();
 
-        requestHandler = eventBusClient.addRequestHandler("buildplates", new RequestHandler.Handler(
+        _requestHandler = eventBusClient.addRequestHandler("buildplates", new RequestHandler.Handler(
            async request =>
             {
                 if (request.type == "start")
                 {
                     Monitor.Enter(_lock);
-                    if (shuttingDown)
+                    if (_shuttingDown)
                     {
                         Monitor.Exit(_lock);
                         return null;
                     }
 
-                    runningInstanceCount += 1;
+                    _runningInstanceCount += 1;
                     Monitor.Exit(_lock);
 
                     StartRequest startRequest;
@@ -84,17 +84,17 @@ public class InstanceManager
                         return null;
                     }
 
-                    var (survival, saveEnabled, inventoryType, buildplateSource, shutdownTime) = startRequest.type switch
+                    var (survival, saveEnabled, inventoryType, buildplateSource, shutdownTime) = startRequest.Type switch
                     {
                         InstanceType.BUILD => (false, true, InventoryType.SYNCED, Instance.BuildplateSource.PLAYER, (long?)null),
                         InstanceType.PLAY => (true, false, InventoryType.DISCARD, Instance.BuildplateSource.PLAYER, null),
                         InstanceType.SHARED_BUILD => (false, false, InventoryType.DISCARD, Instance.BuildplateSource.SHARED, null),
                         InstanceType.SHARED_PLAY => (true, false, InventoryType.DISCARD, Instance.BuildplateSource.SHARED, null),
-                        InstanceType.ENCOUNTER => (true, false, InventoryType.BACKPACK, Instance.BuildplateSource.ENCOUNTER, startRequest.shutdownTime),
+                        InstanceType.ENCOUNTER => (true, false, InventoryType.BACKPACK, Instance.BuildplateSource.ENCOUNTER, startRequest.ShutdownTime),
                         _ => throw new UnreachableException(),
                     };
 
-                    if (buildplateSource is Instance.BuildplateSource.PLAYER && startRequest.playerId is null)
+                    if (buildplateSource is Instance.BuildplateSource.PLAYER && startRequest.PlayerId is null)
                     {
                         Log.Warning("Bad start request");
                         return null;
@@ -104,31 +104,31 @@ public class InstanceManager
 
                     Log.Information($"Starting buildplate instance {instanceId}");
 
-                    Instance? instance = starter.startInstance(instanceId, startRequest.playerId, startRequest.buildplateId, buildplateSource, survival, startRequest.night, saveEnabled, inventoryType, shutdownTime);
-                    if (instance == null)
+                    Instance? instance = starter.StartInstance(instanceId, startRequest.PlayerId, startRequest.BuildplateId, buildplateSource, survival, startRequest.Night, saveEnabled, inventoryType, shutdownTime);
+                    if (instance is null)
                     {
                         Log.Error($"Error starting buildplate instance {instanceId}");
                         return null;
                     }
 
-                    sendEventBusMessage("started", Json.Serialize(new StartNotification(
+                    SendEventBusMessage("started", Json.Serialize(new StartNotification(
                         instanceId,
-                        startRequest.playerId,
-                        startRequest.encounterId,
-                        startRequest.buildplateId,
+                        startRequest.PlayerId,
+                        startRequest.EncounterId,
+                        startRequest.BuildplateId,
                         instance.PublicAddress,
                         instance.Port,
-                        startRequest.type
+                        startRequest.Type
                     )));
 
                     new Thread(() =>
                     {
-                        instance.waitForShutdown();
+                        instance.WaitForShutdown();
 
-                        sendEventBusMessage("stopped", instance.InstanceId);
+                        SendEventBusMessage("stopped", instance.InstanceId);
 
                         Monitor.Enter(_lock);
-                        runningInstanceCount -= 1;
+                        _runningInstanceCount -= 1;
                         Monitor.Exit(_lock);
                     }).Start();
 
@@ -141,7 +141,7 @@ public class InstanceManager
                     try
                     {
                         previewRequest = Json.Deserialize<PreviewRequest>(request.data)!;
-                        serverData = Convert.FromBase64String(previewRequest.serverDataBase64);
+                        serverData = Convert.FromBase64String(previewRequest.ServerDataBase64);
                     }
                     catch (Exception ex)
                     {
@@ -151,7 +151,7 @@ public class InstanceManager
 
                     Log.Information("Generating buildplate preview");
 
-                    string? preview = PreviewGenerator.GeneratePreview(serverData, previewRequest.night);
+                    string? preview = PreviewGenerator.GeneratePreview(serverData, previewRequest.Night);
                     if (preview is null)
                     {
                         Log.Warning("Could not generate preview for buildplate");
@@ -171,25 +171,23 @@ public class InstanceManager
         ));
     }
 
-    private void sendEventBusMessage(string type, string message)
-    {
-        publisher.publish("buildplates", type, message).ContinueWith(task =>
+    private void SendEventBusMessage(string type, string message)
+        => _publisher.publish("buildplates", type, message).ContinueWith(task =>
         {
             if (!task.Result)
                 Log.Error("Event bus publisher error");
         });
-    }
 
-    public void shutdown()
+    public void Shutdown()
     {
-        requestHandler.close();
+        _requestHandler.close();
 
         Monitor.Enter(_lock);
-        shuttingDown = true;
-        Log.Information($"Shutdown signal received, no new buildplate instances will be started, waiting for {runningInstanceCount} instances to finish");
-        while (runningInstanceCount > 0)
+        _shuttingDown = true;
+        Log.Information($"Shutdown signal received, no new buildplate instances will be started, waiting for {_runningInstanceCount} instances to finish");
+        while (_runningInstanceCount > 0)
         {
-            int runningInstanceCount = this.runningInstanceCount;
+            int runningInstanceCount = _runningInstanceCount;
             Monitor.Exit(_lock);
 
             try
@@ -202,13 +200,15 @@ public class InstanceManager
             }
 
             Monitor.Enter(_lock);
-            if (this.runningInstanceCount != runningInstanceCount)
-                Log.Information($"Waiting for {this.runningInstanceCount} instances to finish");
+            if (_runningInstanceCount != runningInstanceCount)
+            {
+                Log.Information($"Waiting for {_runningInstanceCount} instances to finish");
+            }
         }
 
         Monitor.Exit(_lock);
 
-        publisher.flush();
-        publisher.close();
+        _publisher.flush();
+        _publisher.close();
     }
 }

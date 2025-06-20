@@ -1,12 +1,7 @@
 ﻿namespace ViennaDotNet.Common.Utils;
 
-public class Java
+public static class Java
 {
-    private Java()
-    {
-
-    }
-
     public static class IntStream
     {
         /// <summary>
@@ -17,6 +12,8 @@ public class Java
         /// <returns></returns>
         public static IEnumerable<int> Range(int start, int end)
         {
+            // TODO: transform to start, count; use Enumerable.Range
+
             if (start > end)
                 throw new ArgumentException();
 

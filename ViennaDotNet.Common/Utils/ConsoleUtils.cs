@@ -26,7 +26,7 @@ public static class ConsoleUtils
     private static void InitializeOutStream()
     {
         var fs = CreateFileStream("CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE, FileAccess.Write);
-        if (fs != null)
+        if (fs is not null)
         {
             var writer = new StreamWriter(fs) { AutoFlush = true };
             Console.SetOut(writer);
@@ -37,7 +37,7 @@ public static class ConsoleUtils
     private static void InitializeInStream()
     {
         var fs = CreateFileStream("CONIN$", GENERIC_READ, FILE_SHARE_READ, FileAccess.Read);
-        if (fs != null)
+        if (fs is not null)
             Console.SetIn(new StreamReader(fs));
     }
 

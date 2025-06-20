@@ -17,7 +17,7 @@ public class Instance
 {
     private const int HOST_PLAYER_CONNECT_TIMEOUT = 20000;
 
-    public static Instance run(EventBusClient eventBusClient, string? playerId, string buildplateId, BuildplateSource buildplateSource, string instanceId, bool survival, bool night, bool saveEnabled, InventoryType inventoryType, long? shutdownTime, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionstring)
+    public static Instance Run(EventBusClient eventBusClient, string? playerId, string buildplateId, BuildplateSource buildplateSource, string instanceId, bool survival, bool night, bool saveEnabled, InventoryType inventoryType, long? shutdownTime, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionstring)
     {
         if (playerId is null && buildplateSource == BuildplateSource.PLAYER)
         {
@@ -26,7 +26,7 @@ public class Instance
 
         Instance instance = new Instance(eventBusClient, playerId, buildplateId, buildplateSource, instanceId, survival, night, saveEnabled, inventoryType, shutdownTime, publicAddress, port, serverInternalPort, javaCmd, fountainBridgeJar, serverTemplateDir, fabricJarName, connectorPluginJar, baseDir, eventBusConnectionstring);
 
-        new Thread(instance.run)
+        new Thread(instance.Run)
         {
             Name = $"Instance {instanceId}"
         }.Start();
@@ -34,7 +34,7 @@ public class Instance
         return instance;
     }
 
-    private readonly EventBusClient eventBusClient;
+    private readonly EventBusClient _eventBusClient;
 
     private readonly string? _playerId;
     private readonly string _buildplateId;
@@ -79,7 +79,7 @@ public class Instance
 
     private Instance(EventBusClient eventBusClient, string? playerId, string buildplateId, BuildplateSource buildplateSource, string instanceId, bool survival, bool night, bool saveEnabled, InventoryType inventoryType, long? shutdownTime, string publicAddress, int port, int serverInternalPort, string javaCmd, FileInfo fountainBridgeJar, DirectoryInfo serverTemplateDir, string fabricJarName, FileInfo connectorPluginJar, DirectoryInfo baseDir, string eventBusConnectionString)
     {
-        this.eventBusClient = eventBusClient;
+        _eventBusClient = eventBusClient;
 
         _playerId = playerId;
         _buildplateId = buildplateId;
@@ -106,7 +106,7 @@ public class Instance
         _connectorPluginArgString = Json.Serialize(new ConnectorPluginArg(_eventBusAddress, _eventBusQueueName, _inventoryType)).Replace("\"", "\\\"", StringComparison.Ordinal);
     }
 
-    private void run()
+    private void Run()
     {
         _thread = Thread.CurrentThread;
 
@@ -121,16 +121,16 @@ public class Instance
             });
             Log.Information($"Using port {Port} internal port {_serverInternalPort}");
 
-            _publisher = eventBusClient.addPublisher();
-            _requestSender = eventBusClient.addRequestSender();
+            _publisher = _eventBusClient.addPublisher();
+            _requestSender = _eventBusClient.addRequestSender();
 
             Log.Information("Setting up server");
 
             BuildplateLoadResponse? buildplateLoadResponse = _buildplateSource switch
             {
-                BuildplateSource.PLAYER => sendEventBusRequestRaw<BuildplateLoadResponse>("load", new BuildplateLoadRequest(_playerId!, _buildplateId), true).Result,
-                BuildplateSource.SHARED => sendEventBusRequestRaw<BuildplateLoadResponse>("loadShared", new SharedBuildplateLoadRequest(_buildplateId), true).Result,
-                BuildplateSource.ENCOUNTER => sendEventBusRequestRaw<BuildplateLoadResponse>("loadEncounter", new EncounterBuildplateLoadRequest(_buildplateId), true).Result,
+                BuildplateSource.PLAYER => SendEventBusRequestRaw<BuildplateLoadResponse>("load", new BuildplateLoadRequest(_playerId!, _buildplateId), true).Result,
+                BuildplateSource.SHARED => SendEventBusRequestRaw<BuildplateLoadResponse>("loadShared", new SharedBuildplateLoadRequest(_buildplateId), true).Result,
+                BuildplateSource.ENCOUNTER => SendEventBusRequestRaw<BuildplateLoadResponse>("loadEncounter", new EncounterBuildplateLoadRequest(_buildplateId), true).Result,
                 _ => throw new UnreachableException(),
             };
 
@@ -139,7 +139,7 @@ public class Instance
             byte[] serverData;
             try
             {
-                serverData = Convert.FromBase64String(buildplateLoadResponse.serverDataBase64);
+                serverData = Convert.FromBase64String(buildplateLoadResponse.ServerDataBase64);
             }
             catch
             {
@@ -149,8 +149,8 @@ public class Instance
 
             try
             {
-                _serverWorkDir = setupServerFiles(serverData);
-                if (_serverWorkDir == null)
+                _serverWorkDir = SetupServerFiles(serverData);
+                if (_serverWorkDir is null)
                 {
                     Log.Error("Could not set up files for server");
                     return;
@@ -164,8 +164,8 @@ public class Instance
 
             try
             {
-                _bridgeWorkDir = setupBridgeFiles(serverData);
-                if (_bridgeWorkDir == null)
+                _bridgeWorkDir = SetupBridgeFiles(serverData);
+                if (_bridgeWorkDir is null)
                 {
                     Log.Error("Could not set up files for bridge");
                     return;
@@ -179,35 +179,35 @@ public class Instance
 
             Log.Information("Running server");
 
-            _subscriber = eventBusClient.addSubscriber(_eventBusQueueName, new Subscriber.SubscriberListener(
-                async @event => await handleConnectorEvent(@event),
+            _subscriber = _eventBusClient.addSubscriber(_eventBusQueueName, new Subscriber.SubscriberListener(
+                async @event => await HandleConnectorEvent(@event),
                 () =>
                 {
                     Log.Error("Event bus subscriber error");
-                    beginShutdown();
+                    BeginShutdown();
                 }
             ));
-            _requestHandler = eventBusClient.addRequestHandler(_eventBusQueueName, new RequestHandler.Handler(
+            _requestHandler = _eventBusClient.addRequestHandler(_eventBusQueueName, new RequestHandler.Handler(
                 request =>
                 {
-                    object? responseObject = handleConnectorRequest(request);
+                    object? responseObject = HandleConnectorRequest(request);
                     return Task.FromResult(responseObject is not null ? Json.Serialize(responseObject) : null);
                 },
                 () =>
                 {
                     Log.Error("Event bus request handler error");
-                    beginShutdown();
+                    BeginShutdown();
                 }
             ));
 
             Monitor.Enter(_subprocessLock);
             if (!_shuttingDown)
             {
-                startServerProcess();
-                if (_serverProcess != null)
+                StartServerProcess();
+                if (_serverProcess is not null)
                 {
                     Monitor.Exit(_subprocessLock);
-                    int exitCode = waitForProcess(_serverProcess.Process);
+                    int exitCode = WaitForProcess(_serverProcess.Process);
                     Monitor.Enter(_subprocessLock);
                     _serverProcess = null;
                     if (!_shuttingDown)
@@ -217,12 +217,12 @@ public class Instance
 
                     _shuttingDown = true;
 
-                    if (_bridgeProcess != null)
+                    if (_bridgeProcess is not null)
                     {
                         Log.Information("Bridge is still running, shutting it down now");
                         _bridgeProcess.StopAndWait();
                         Monitor.Exit(_subprocessLock);
-                        exitCode = waitForProcess(_bridgeProcess.Process);
+                        exitCode = WaitForProcess(_bridgeProcess.Process);
                         Monitor.Enter(_subprocessLock);
                         _bridgeProcess = null;
                         Log.Information($"Bridge has finished with exit code {exitCode}");
@@ -256,28 +256,28 @@ public class Instance
                 _requestSender.close();
             }
 
-            cleanupBaseDir();
+            CleanupBaseDir();
 
             Log.Information("Finished");
         }
     }
 
-    private async Task handleConnectorEvent(Subscriber.Event @event)
+    private async Task HandleConnectorEvent(Subscriber.Event @event)
     {
         switch (@event.type)
         {
             case "started":
                 {
                     Log.Information("Server is ready");
-                    startBridgeProcess();
-                    await sendEventBusInstanceStatusNotification("ready");
-                    if (_shutdownTime != null)
+                    StartBridgeProcess();
+                    await SendEventBusInstanceStatusNotification("ready");
+                    if (_shutdownTime is not null)
                     {
-                        startShutdownTimer();
+                        StartShutdownTimer();
                     }
                     else
                     {
-                        startHostPlayerConnectTimeout();
+                        StartHostPlayerConnectTimeout();
                     }
                 }
 
@@ -286,14 +286,14 @@ public class Instance
                 {
                     if (_saveEnabled)
                     {
-                        WorldSavedMessage? worldSavedMessage = readJson<WorldSavedMessage>(@event.data);
+                        WorldSavedMessage? worldSavedMessage = ReadJson<WorldSavedMessage>(@event.data);
                         if (worldSavedMessage is not null)
                         {
                             if (_hostPlayerConnected)
 
                             {
                                 Log.Information("Saving snapshot");
-                                _ = sendEventBusRequest<object>("saved", worldSavedMessage, false);
+                                _ = SendEventBusRequest<object>("saved", worldSavedMessage, false);
                             }
                             else
                             {
@@ -311,38 +311,38 @@ public class Instance
 
             case "inventoryAdd":
                 {
-                    InventoryAddItemMessage? inventoryAddItemMessage = readJson<InventoryAddItemMessage>(@event.data);
-                    if (inventoryAddItemMessage != null)
-                        await sendEventBusRequest<object>("inventoryAdd", inventoryAddItemMessage, false);
+                    InventoryAddItemMessage? inventoryAddItemMessage = ReadJson<InventoryAddItemMessage>(@event.data);
+                    if (inventoryAddItemMessage is not null)
+                        await SendEventBusRequest<object>("inventoryAdd", inventoryAddItemMessage, false);
                 }
 
                 break;
             case "inventoryUpdateWear":
                 {
-                    InventoryUpdateItemWearMessage? inventoryUpdateItemWearMessage = readJson<InventoryUpdateItemWearMessage>(@event.data);
-                    if (inventoryUpdateItemWearMessage != null)
-                        await sendEventBusRequest<object>("inventoryUpdateWear", inventoryUpdateItemWearMessage, false);
+                    InventoryUpdateItemWearMessage? inventoryUpdateItemWearMessage = ReadJson<InventoryUpdateItemWearMessage>(@event.data);
+                    if (inventoryUpdateItemWearMessage is not null)
+                        await SendEventBusRequest<object>("inventoryUpdateWear", inventoryUpdateItemWearMessage, false);
                 }
 
                 break;
             case "inventorySetHotbar":
                 {
-                    InventorySetHotbarMessage? inventorySetHotbarMessage = readJson<InventorySetHotbarMessage>(@event.data);
-                    if (inventorySetHotbarMessage != null)
-                        await sendEventBusRequest<object>("inventorySetHotbar", inventorySetHotbarMessage, false);
+                    InventorySetHotbarMessage? inventorySetHotbarMessage = ReadJson<InventorySetHotbarMessage>(@event.data);
+                    if (inventorySetHotbarMessage is not null)
+                        await SendEventBusRequest<object>("inventorySetHotbar", inventorySetHotbarMessage, false);
                 }
 
                 break;
         }
     }
 
-    private async Task<object?> handleConnectorRequest(RequestHandler.Request request)
+    private async Task<object?> HandleConnectorRequest(RequestHandler.Request request)
     {
         switch (request.type)
         {
             case "playerConnected":
                 {
-                    PlayerConnectedRequest? playerConnectedRequest = readJson<PlayerConnectedRequest>(request.data);
+                    PlayerConnectedRequest? playerConnectedRequest = ReadJson<PlayerConnectedRequest>(request.data);
                     if (playerConnectedRequest is not null)
                     {
                         if (_playerId is not null && !_hostPlayerConnected && playerConnectedRequest.uuid != _playerId)
@@ -351,7 +351,7 @@ public class Instance
                             return new PlayerConnectedResponse(false, null);
                         }
 
-                        PlayerConnectedResponse? playerConnectedResponse = await sendEventBusRequest<PlayerConnectedResponse>("playerConnected", playerConnectedRequest, true);
+                        PlayerConnectedResponse? playerConnectedResponse = await SendEventBusRequest<PlayerConnectedResponse>("playerConnected", playerConnectedRequest, true);
                         if (playerConnectedResponse is not null)
                         {
                             Log.Information($"Player {playerConnectedRequest.uuid} has connected");
@@ -370,10 +370,10 @@ public class Instance
             case "playerDisconnected":
                 {
                     Log.Debug("Player dicconnecting...");
-                    PlayerDisconnectedRequest? playerDisconnectedRequest = readJson<PlayerDisconnectedRequest>(request.data);
+                    PlayerDisconnectedRequest? playerDisconnectedRequest = ReadJson<PlayerDisconnectedRequest>(request.data);
                     if (playerDisconnectedRequest is not null)
                     {
-                        PlayerDisconnectedResponse? playerDisconnectedResponse = await sendEventBusRequest<PlayerDisconnectedResponse>("playerDisconnected", playerDisconnectedRequest, true);
+                        PlayerDisconnectedResponse? playerDisconnectedResponse = await SendEventBusRequest<PlayerDisconnectedResponse>("playerDisconnected", playerDisconnectedRequest, true);
                         if (playerDisconnectedResponse is not null)
                         {
                             Log.Information($"Player {playerDisconnectedRequest.playerId} has disconnected");
@@ -381,7 +381,7 @@ public class Instance
                             if (_shutdownTime is null && _playerId is not null && playerDisconnectedRequest.playerId == _playerId)
                             {
                                 Log.Information("Host player has disconnected, beginning shutdown");
-                                beginShutdown();
+                                BeginShutdown();
                             }
 
                             return playerDisconnectedResponse;
@@ -392,10 +392,10 @@ public class Instance
                 break;
             case "playerDead":
                 {
-                    string? playerId = readJson<string>(request.data);
+                    string? playerId = ReadJson<string>(request.data);
                     if (playerId is not null)
                     {
-                        bool? respawn = await sendEventBusRequest<bool?>("playerDead", playerId, true);
+                        bool? respawn = await SendEventBusRequest<bool?>("playerDead", playerId, true);
                         if (respawn is not null)
                         {
                             return respawn.Value;
@@ -406,10 +406,10 @@ public class Instance
                 break;
             case "getInventory":
                 {
-                    string? playerId = readJson<string>(request.data);
+                    string? playerId = ReadJson<string>(request.data);
                     if (playerId is not null)
                     {
-                        InventoryResponse? inventoryResponse = await sendEventBusRequest<InventoryResponse>("getInventory", playerId, true);
+                        InventoryResponse? inventoryResponse = await SendEventBusRequest<InventoryResponse>("getInventory", playerId, true);
 
                         if (inventoryResponse is not null)
                             return inventoryResponse;
@@ -419,19 +419,19 @@ public class Instance
                 break;
             case "inventoryRemove":
                 {
-                    InventoryRemoveItemRequest? inventoryRemoveItemRequest = readJson<InventoryRemoveItemRequest>(request.data);
+                    InventoryRemoveItemRequest? inventoryRemoveItemRequest = ReadJson<InventoryRemoveItemRequest>(request.data);
                     if (inventoryRemoveItemRequest is not null)
                     {
                         if (inventoryRemoveItemRequest.instanceId is not null)
                         {
-                            bool? success = await sendEventBusRequest<bool>("inventoryRemove", inventoryRemoveItemRequest, true);
+                            bool? success = await SendEventBusRequest<bool>("inventoryRemove", inventoryRemoveItemRequest, true);
 
                             if (success is not null)
                                 return success;
                         }
                         else
                         {
-                            int? removedCount = await sendEventBusRequest<int>("inventoryRemove", inventoryRemoveItemRequest, true);
+                            int? removedCount = await SendEventBusRequest<int>("inventoryRemove", inventoryRemoveItemRequest, true);
                             if (removedCount is not null)
                                 return removedCount;
                         }
@@ -441,7 +441,7 @@ public class Instance
                 break;
             case "findPlayer":
                 {
-                    FindPlayerIdRequest? findPlayerIdRequest = readJson<FindPlayerIdRequest>(request.data);
+                    FindPlayerIdRequest? findPlayerIdRequest = ReadJson<FindPlayerIdRequest>(request.data);
                     if (findPlayerIdRequest is not null)
                     {
                         // TODO
@@ -452,11 +452,11 @@ public class Instance
                 break;
             case "getInitialPlayerState":
                 {
-                    string? playerId = readJson<string>(request.data);
-                    if (playerId != null)
+                    string? playerId = ReadJson<string>(request.data);
+                    if (playerId is not null)
                     {
-                        InitialPlayerStateResponse? initialPlayerStateResponse = await sendEventBusRequest<InitialPlayerStateResponse>("getInitialPlayerState", playerId, true);
-                        if (initialPlayerStateResponse != null)
+                        InitialPlayerStateResponse? initialPlayerStateResponse = await SendEventBusRequest<InitialPlayerStateResponse>("getInitialPlayerState", playerId, true);
+                        if (initialPlayerStateResponse is not null)
                         {
                             return initialPlayerStateResponse;
                         }
@@ -469,7 +469,7 @@ public class Instance
         return null;
     }
 
-    private T? readJson<T>(string str)
+    private T? ReadJson<T>(string str)
     {
         try
         {
@@ -478,17 +478,17 @@ public class Instance
         catch (Exception ex)
         {
             Log.Error($"Failed to decode event bus message JSON: {ex}");
-            beginShutdown();
+            BeginShutdown();
             return default;
         }
     }
 
     private sealed record RequestWithInstanceId(
-        string instanceId,
-        object request
+        string InstanceId,
+        object Request
     );
 
-    private async Task sendEventBusInstanceStatusNotification(string status)
+    private async Task SendEventBusInstanceStatusNotification(string status)
     {
         Debug.Assert(_publisher is not null);
 
@@ -497,27 +497,27 @@ public class Instance
         if (!result)
         {
             Log.Error("Event bus publisher error");
-            beginShutdown();
+            BeginShutdown();
         }
     }
 
-    private Task<T?> sendEventBusRequest<T>(string type, object obj, bool returnResponse)
+    private Task<T?> SendEventBusRequest<T>(string type, object obj, bool returnResponse)
     {
         RequestWithInstanceId request = new RequestWithInstanceId(InstanceId, obj);
 
-        return sendEventBusRequestRaw<T>(type, request, returnResponse);
+        return SendEventBusRequestRaw<T>(type, request, returnResponse);
     }
 
-    private async Task<T?> sendEventBusRequestRaw<T>(string type, object obj, bool returnResponse)
+    private async Task<T?> SendEventBusRequestRaw<T>(string type, object obj, bool returnResponse)
     {
         try
         {
             string? response = await _requestSender!.request("buildplates", type, Json.Serialize(obj)).Task;
 
-            if (response == null)
+            if (response is null)
             {
                 Log.Error("Event bus request failed (no response)");
-                beginShutdown();
+                BeginShutdown();
                 return default;
             }
 
@@ -528,12 +528,12 @@ public class Instance
         catch (Exception ex)
         {
             Log.Error($"Event bus request failed: {ex}");
-            beginShutdown();
+            BeginShutdown();
             return default;
         }
     }
 
-    private DirectoryInfo? setupServerFiles(byte[] serverData)
+    private DirectoryInfo? SetupServerFiles(byte[] serverData)
     {
         DirectoryInfo workDir = new DirectoryInfo(Path.Combine(_baseDir.FullName, "server"));
         if (!workDir.TryCreate())
@@ -542,7 +542,7 @@ public class Instance
             return null;
         }
 
-        if (!copyServerFile(Path.Combine(_serverTemplateDir.FullName, _fabricJarName), Path.Combine(workDir.FullName, _fabricJarName), false))
+        if (!CopyServerFile(Path.Combine(_serverTemplateDir.FullName, _fabricJarName), Path.Combine(workDir.FullName, _fabricJarName), false))
         {
 
             Log.Error($"Fabric JAR {_fabricJarName} does not exist in server template directory");
@@ -550,7 +550,7 @@ public class Instance
         }
 
         bool warnedMissingServerFiles = false;
-        if (!copyServerFile(Path.Combine(Path.Combine(_serverTemplateDir.FullName, ".fabric"), "server"), Path.Combine(workDir.FullName, ".fabric/server"), true))
+        if (!CopyServerFile(Path.Combine(Path.Combine(_serverTemplateDir.FullName, ".fabric"), "server"), Path.Combine(workDir.FullName, ".fabric/server"), true))
         {
             if (!warnedMissingServerFiles)
             {
@@ -560,7 +560,7 @@ public class Instance
             }
         }
 
-        if (!copyServerFile(Path.Combine(_serverTemplateDir.FullName, "libraries"), Path.Combine(workDir.FullName, "libraries"), true))
+        if (!CopyServerFile(Path.Combine(_serverTemplateDir.FullName, "libraries"), Path.Combine(workDir.FullName, "libraries"), true))
         {
             if (!warnedMissingServerFiles)
             {
@@ -569,7 +569,7 @@ public class Instance
             }
         }
 
-        if (!copyServerFile(Path.Combine(_serverTemplateDir.FullName, "versions"), Path.Combine(workDir.FullName, "versions"), true))
+        if (!CopyServerFile(Path.Combine(_serverTemplateDir.FullName, "versions"), Path.Combine(workDir.FullName, "versions"), true))
         {
             if (!warnedMissingServerFiles)
             {
@@ -578,7 +578,7 @@ public class Instance
             }
         }
 
-        if (!copyServerFile(Path.Combine(_serverTemplateDir.FullName, "mods"), Path.Combine(workDir.FullName, "mods"), true))
+        if (!CopyServerFile(Path.Combine(_serverTemplateDir.FullName, "mods"), Path.Combine(workDir.FullName, "mods"), true))
         {
             Log.Error("Mods directory was not present in server template directory, the buildplate server instance will not function correctly without the Fountain and Vienna Fabric mods installed");
         }
@@ -618,7 +618,7 @@ public class Instance
             return null;
         }
 
-        TagCompound levelDatTag = createLevelDat(_survival, _night);
+        TagCompound levelDatTag = CreateLevelDat(_survival, _night);
         using (FileStream fs = new FileStream(Path.Combine(worldDir.FullName, "level.dat"), FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read))
         using (GZipStream gzs = new GZipStream(fs, CompressionLevel.Optimal))
         {
@@ -649,7 +649,7 @@ public class Instance
         return workDir;
     }
 
-    private static bool copyServerFile(string src, string dst, bool directory)
+    private static bool CopyServerFile(string src, string dst, bool directory)
     {
         if (directory)
         {
@@ -712,72 +712,72 @@ public class Instance
         return true;
     }
 
-    private static TagCompound createLevelDat(bool survival, bool night)
+    private static TagCompound CreateLevelDat(bool survival, bool night)
     {
         TagCompound dataTag = new NbtBuilder.Compound()
-            .put("GameType", survival ? 0 : 1)
-            .put("Difficulty", 1)
-            .put("DayTime", !night ? 6000 : 18000)
-            .put("GameRules", new NbtBuilder.Compound()
-                .put("doDaylightCycle", "false")
-                .put("doWeatherCycle", "false")
-                .put("doMobSpawning", "false")
-                .put("fountain:doMobDespawn", "false")
-                .put("keepInventory", "true")
+            .Add("GameType", survival ? 0 : 1)
+            .Add("Difficulty", 1)
+            .Add("DayTime", !night ? 6000 : 18000)
+            .Add("GameRules", new NbtBuilder.Compound()
+                .Add("doDaylightCycle", "false")
+                .Add("doWeatherCycle", "false")
+                .Add("doMobSpawning", "false")
+                .Add("fountain:doMobDespawn", "false")
+                .Add("keepInventory", "true")
             )
-            .put("WorldGenSettings", new NbtBuilder.Compound()
-                .put("seed", (long)0)    // TODO
-                .put("generate_features", (byte)0)
-                .put("dimensions", new NbtBuilder.Compound()
-                    .put("minecraft:overworld", new NbtBuilder.Compound()
-                        .put("type", "minecraft:overworld")
-                        .put("generator", new NbtBuilder.Compound()
-                            .put("type", "fountain:wrapper")
-                            .put("buildplate", new NbtBuilder.Compound()
-                                .put("ground_level", 63))
-                            .put("inner", new NbtBuilder.Compound()
-                                .put("type", "minecraft:noise")
-                                .put("settings", "minecraft:overworld")
-                                .put("biome_source", new NbtBuilder.Compound()
-                                    .put("type", "minecraft:multi_noise")
-                                    .put("preset", "minecraft:overworld")
+            .Add("WorldGenSettings", new NbtBuilder.Compound()
+                .Add("seed", (long)0)    // TODO
+                .Add("generate_features", (byte)0)
+                .Add("dimensions", new NbtBuilder.Compound()
+                    .Add("minecraft:overworld", new NbtBuilder.Compound()
+                        .Add("type", "minecraft:overworld")
+                        .Add("generator", new NbtBuilder.Compound()
+                            .Add("type", "fountain:wrapper")
+                            .Add("buildplate", new NbtBuilder.Compound()
+                                .Add("ground_level", 63))
+                            .Add("inner", new NbtBuilder.Compound()
+                                .Add("type", "minecraft:noise")
+                                .Add("settings", "minecraft:overworld")
+                                .Add("biome_source", new NbtBuilder.Compound()
+                                    .Add("type", "minecraft:multi_noise")
+                                    .Add("preset", "minecraft:overworld")
                                 )
                             )
                         )
                     )
-                    .put("minecraft:the_nether", new NbtBuilder.Compound()
-                        .put("type", "minecraft:the_nether")
-                        .put("generator", new NbtBuilder.Compound()
-                            .put("type", "fountain:wrapper")
-                            .put("buildplate", new NbtBuilder.Compound()
-                                .put("ground_level", 32))
-                            .put("inner", new NbtBuilder.Compound()
-                                .put("type", "minecraft:noise")
-                                .put("settings", "minecraft:nether")
-                                .put("biome_source", new NbtBuilder.Compound()
-                                    .put("type", "minecraft:fixed")
-                                    .put("biome", "minecraft:nether_wastes")
+                    .Add("minecraft:the_nether", new NbtBuilder.Compound()
+                        .Add("type", "minecraft:the_nether")
+                        .Add("generator", new NbtBuilder.Compound()
+                            .Add("type", "fountain:wrapper")
+                            .Add("buildplate", new NbtBuilder.Compound()
+                                .Add("ground_level", 32))
+                            .Add("inner", new NbtBuilder.Compound()
+                                .Add("type", "minecraft:noise")
+                                .Add("settings", "minecraft:nether")
+                                .Add("biome_source", new NbtBuilder.Compound()
+                                    .Add("type", "minecraft:fixed")
+                                    .Add("biome", "minecraft:nether_wastes")
                                 )
                             )
                         )
                     )
                 )
             )
-            .put("DataVersion", 3700)
-            .put("version", 19133)
-            .put("Version", new NbtBuilder.Compound()
-                .put("Id", 3700)
-                .put("Name", "1.20.4")
-                .put("Series", "main")
-                .put("Snapshot", (byte)0)
+            .Add("DataVersion", 3700)
+            .Add("version", 19133)
+            .Add("Version", new NbtBuilder.Compound()
+                .Add("Id", 3700)
+                .Add("Name", "1.20.4")
+                .Add("Series", "main")
+                .Add("Snapshot", (byte)0)
             )
-            .put("initialized", (byte)1)
-            .build("Data");
+            .Add("initialized", (byte)1)
+            .Build("Data");
 
         return dataTag;
     }
 
-    private DirectoryInfo? setupBridgeFiles(byte[] serverData)
+    private DirectoryInfo? SetupBridgeFiles(byte[] serverData)
     {
         DirectoryInfo workDir = new DirectoryInfo(Path.Combine(_baseDir.FullName, "bridge"));
         if (!workDir.TryCreate())
@@ -791,7 +791,7 @@ public class Instance
         return workDir;
     }
 
-    private void cleanupBaseDir()
+    private void CleanupBaseDir()
     {
         Log.Information("Cleaning up runtime directory");
 
@@ -829,7 +829,7 @@ public class Instance
         }
     }
 
-    private void startServerProcess()
+    private void StartServerProcess()
     {
         Monitor.Enter(_subprocessLock);
 
@@ -840,7 +840,7 @@ public class Instance
             return;
         }
 
-        if (_serverProcess != null)
+        if (_serverProcess is not null)
         {
             Log.Debug("Server process has already been started");
             Monitor.Exit(_subprocessLock);
@@ -885,7 +885,7 @@ public class Instance
         Monitor.Exit(_subprocessLock);
     }
 
-    private void startBridgeProcess()
+    private void StartBridgeProcess()
     {
         Monitor.Enter(_subprocessLock);
 
@@ -896,7 +896,7 @@ public class Instance
             return;
         }
 
-        if (_bridgeProcess != null)
+        if (_bridgeProcess is not null)
         {
             Log.Debug("Bridge process has already been started");
             Monitor.Exit(_subprocessLock);
@@ -935,7 +935,7 @@ public class Instance
                 {
                     Log.Warning($"Bridge process has unexpectedly terminated with exit code {_bridgeProcess.ExitCode}");
                     _bridgeProcess = null;
-                    beginShutdown();
+                    BeginShutdown();
                 }
 
                 Monitor.Exit(_subprocessLock);
@@ -964,7 +964,7 @@ public class Instance
     }
 
 #pragma warning disable IDE0022
-    private void startHostPlayerConnectTimeout()
+    private void StartHostPlayerConnectTimeout()
     {
         new Thread(() =>
         {
@@ -986,12 +986,12 @@ public class Instance
             if (!_hostPlayerConnected)
             {
                 Log.Information("Host player has not connected yet, shutting down");
-                beginShutdown();
+                BeginShutdown();
             }
         }).Start();
     }
 
-    private void startShutdownTimer()
+    private void StartShutdownTimer()
     {
         new Thread(() =>
         {
@@ -1021,11 +1021,11 @@ public class Instance
             }
 
             Log.Information("Shutdown time has been reached, shutting down");
-            beginShutdown();
+            BeginShutdown();
         }).Start();
     }
 
-    private void beginShutdown()
+    private void BeginShutdown()
     {
         // a "bit" ugly
         ((Func<Task>)(async () =>
@@ -1045,9 +1045,9 @@ public class Instance
 
             Log.Information("Beginning shutdown");
 
-            await sendEventBusInstanceStatusNotification("shuttingDown");
+            await SendEventBusInstanceStatusNotification("shuttingDown");
 
-            if (_bridgeProcess != null)
+            if (_bridgeProcess is not null)
             {
                 Log.Information("Waiting for bridge to shut down");
                 Monitor.Exit(_subprocessLock);
@@ -1058,7 +1058,7 @@ public class Instance
                 Log.Information($"Bridge has finished with exit code {exitCode}");
             }
 
-            if (_serverProcess != null)
+            if (_serverProcess is not null)
             {
                 Log.Information("Asking the server to shut down");
                 _serverProcess.StopAndWait();
@@ -1067,12 +1067,12 @@ public class Instance
             Monitor.Exit(_subprocessLock);
         }))().Forget(ex =>
         {
-
+            Log.Error(ex.Message);
         });
     }
 #pragma warning restore IDE0022
 
-    private static int waitForProcess(Process process)
+    private static int WaitForProcess(Process process)
     {
         int exitCode;
         for (; ; )
@@ -1092,7 +1092,7 @@ public class Instance
         return exitCode;
     }
 
-    public void waitForShutdown()
+    public void WaitForShutdown()
     {
         for (; ; )
         {
@@ -1115,20 +1115,20 @@ public class Instance
     }
 
     private sealed record BuildplateLoadRequest(
-        string playerId,
-        string buildplateId
+        string PlayerId,
+        string BuildplateId
     );
 
     private sealed record EncounterBuildplateLoadRequest(
-        string encounterBuildplateId
+        string EncounterBuildplateId
     );
 
     private sealed record SharedBuildplateLoadRequest(
-        string sharedBuildplateId
+        string SharedBuildplateId
     );
 
     private sealed record BuildplateLoadResponse(
-        string serverDataBase64
+        string ServerDataBase64
     );
 
     [JsonConverter(typeof(JsonStringEnumConverter))]

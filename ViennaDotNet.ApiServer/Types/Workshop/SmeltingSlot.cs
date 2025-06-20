@@ -3,35 +3,35 @@
 namespace ViennaDotNet.ApiServer.Types.Workshop;
 
 public record SmeltingSlot(
-    SmeltingSlot.Fuel? fuel,
-    SmeltingSlot.Burning? burning,
-    string? sessionId,
-    string? recipeId,
-    OutputItem? output,
-    InputItem[]? escrow,
-    int completed,
-    int available,
-    int total,
-    string? nextCompletionUtc,
-    string? totalCompletionUtc,
-    State state,
-    BoostState? boostState,
-    UnlockPrice? unlockPrice,
-    int streamVersion
+    SmeltingSlot.FuelR? Fuel,
+    SmeltingSlot.BurningR? Burning,
+    string? SessionId,
+    string? RecipeId,
+    OutputItem? Output,
+    InputItem[]? Escrow,
+    int Completed,
+    int Available,
+    int Total,
+    string? NextCompletionUtc,
+    string? TotalCompletionUtc,
+    State State,
+    BoostState? BoostState,
+    UnlockPrice? UnlockPrice,
+    int StreamVersion
 )
 {
-    public sealed record Fuel(
-        BurnRate burnRate,
-        string itemId,
-        int quantity,
-        string[] itemInstanceIds
+    public sealed record FuelR(
+        BurnRate BurnRate,
+        string ItemId,
+        int Quantity,
+        string[] ItemInstanceIds
     );
 
-    public sealed record Burning(
-        string? burnStartTime,
-        string? burnsUntil,
-        string? remainingBurnTime,
-        float? heatDepleted,
-        Fuel fuel
+    public sealed record BurningR(
+        string? BurnStartTime,
+        string? BurnsUntil,
+        string? RemainingBurnTime,
+        float? HeatDepleted,
+        FuelR Fuel
     );
 }

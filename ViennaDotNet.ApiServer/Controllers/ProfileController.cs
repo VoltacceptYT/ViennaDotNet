@@ -41,17 +41,17 @@ public class ProfileController : ControllerBase
         int currentLevelExperience = profile.experience - (profile.level > 1 ? (profile.level - 2 < levels.Length ? levels[profile.level - 2].experienceRequired : levels[^1].experienceRequired) : 0);
         int experienceRemaining = profile.level - 1 < levels.Length ? levels[profile.level - 1].experienceRequired - profile.experience : 0;
 
-        int maxPlayerHealth = BoostUtils.getMaxPlayerHealth(boosts, requestStartedOn, staticData.catalog.itemsCatalog);
+        int maxPlayerHealth = BoostUtils.GetMaxPlayerHealth(boosts, requestStartedOn, staticData.catalog.itemsCatalog);
         if (profile.health > maxPlayerHealth)
         {
             profile.health = maxPlayerHealth;
         }
 
         string resp = Json.Serialize(new EarthApiResponse(new Types.Profile.Profile(
-            Java.IntStream.Range(0, levels.Length).Collect(() => new Dictionary<int, Types.Profile.Profile.Level>(), (hashMap, levelIndex) =>
+            Java.IntStream.Range(0, levels.Length).Collect(() => new Dictionary<int, Types.Profile.Profile.LevelR>(), (hashMap, levelIndex) =>
             {
                 Levels.Level level = levels[levelIndex];
-                hashMap[levelIndex + 1] = new Types.Profile.Profile.Level(level.experienceRequired, LevelUtils.makeLevelRewards(level).toApiResponse());
+                hashMap[levelIndex + 1] = new Types.Profile.Profile.LevelR(level.experienceRequired, LevelUtils.MakeLevelRewards(level).ToApiResponse());
             }, DictionaryExtensions.AddRange),
             profile.experience,
             profile.level,

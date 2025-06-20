@@ -8,19 +8,19 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public sealed class BuildplateInstancesManager
 {
-    private readonly EventBusClient eventBusClient;
-    private readonly Subscriber subscriber;
-    private readonly RequestSender requestSender;
+    private readonly EventBusClient _eventBusClient;
+    private readonly Subscriber _subscriber;
+    private readonly RequestSender _requestSender;
 
-    private readonly Dictionary<string, TaskCompletionSource<bool>?> pendingInstances = [];
-    private readonly Dictionary<string, InstanceInfo> instances = [];
-    private readonly Dictionary<string, HashSet<string>> instancesByBuildplateId = [];
+    private readonly Dictionary<string, TaskCompletionSource<bool>?> _pendingInstances = [];
+    private readonly Dictionary<string, InstanceInfo> _instances = [];
+    private readonly Dictionary<string, HashSet<string>> _instancesByBuildplateId = [];
 
     public BuildplateInstancesManager(EventBusClient eventBusClient)
     {
-        this.eventBusClient = eventBusClient;
-        subscriber = eventBusClient.addSubscriber("buildplates", new Subscriber.SubscriberListener(
-            handleEvent,
+        _eventBusClient = eventBusClient;
+        _subscriber = _eventBusClient.addSubscriber("buildplates", new Subscriber.SubscriberListener(
+            HandleEvent,
             () =>
             {
                 Log.Fatal("Buildplates event bus subscriber error");
@@ -28,30 +28,30 @@ public sealed class BuildplateInstancesManager
                 Environment.Exit(1);
             }
         ));
-        requestSender = eventBusClient.addRequestSender();
+        _requestSender = _eventBusClient.addRequestSender();
     }
 
-    public async Task<string?> requestBuildplateInstance(string? playerId, string? encounterId, string buildplateId, InstanceType type, long shutdownTime, bool night)
+    public async Task<string?> RequestBuildplateInstance(string? playerId, string? encounterId, string buildplateId, InstanceType type, long shutdownTime, bool night)
     {
-        if (playerId == null && type != InstanceType.ENCOUNTER)
+        if (playerId is null && type != InstanceType.ENCOUNTER)
         {
             throw new ArgumentException();
         }
 
-        if (encounterId != null && type != InstanceType.ENCOUNTER)
+        if (encounterId is not null && type != InstanceType.ENCOUNTER)
         {
             throw new ArgumentException();
         }
 
-        if (playerId != null && encounterId != null)
+        if (playerId is not null && encounterId is not null)
         {
             Log.Information($"Finding buildplate instance for buildplate {buildplateId} type {type} encounter {encounterId} player {playerId}");
         }
-        else if (playerId != null)
+        else if (playerId is not null)
         {
             Log.Information($"Finding buildplate instance for buildplate {buildplateId} type {type} player {playerId}");
         }
-        else if (encounterId != null)
+        else if (encounterId is not null)
         {
             Log.Information($"Finding buildplate instance for buildplate {buildplateId} type {type} encounter {encounterId}");
         }
@@ -60,19 +60,19 @@ public sealed class BuildplateInstancesManager
             Log.Information($"Finding buildplate instance for buildplate {buildplateId} type {type}");
         }
 
-        lock (instances)
+        lock (_instances)
         {
-            HashSet<string>? instanceIds = instancesByBuildplateId.GetOrDefault(buildplateId);
+            HashSet<string>? instanceIds = _instancesByBuildplateId.GetOrDefault(buildplateId);
             if (instanceIds is not null)
             {
                 foreach (string loopInstanceId in instanceIds)
                 {
-                    InstanceInfo? instanceInfo = instances.GetOrDefault(loopInstanceId);
-                    if (instanceInfo is not null && instanceInfo.shuttingDown == false)
+                    InstanceInfo? instanceInfo = _instances.GetOrDefault(loopInstanceId);
+                    if (instanceInfo is not null && instanceInfo.ShuttingDown == false)
                     {
-                        if (instanceInfo.type == type &&
-                            instanceInfo.playerId == playerId &&
-                            instanceInfo.encounterId == encounterId
+                        if (instanceInfo.Type == type &&
+                            instanceInfo.PlayerId == playerId &&
+                            instanceInfo.EncounterId == encounterId
                         )
                         {
                             Log.Information($"Found existing buildplate instance {loopInstanceId}");
@@ -84,22 +84,22 @@ public sealed class BuildplateInstancesManager
         }
 
         Log.Information("Did not find existing instance, starting new instance");
-        string? instanceId = await requestSender.request("buildplates", "start", Json.Serialize(new StartRequest(playerId, encounterId, buildplateId, night, type, shutdownTime))).Task;
-        if (instanceId == null)
+        string? instanceId = await _requestSender.request("buildplates", "start", Json.Serialize(new StartRequest(playerId, encounterId, buildplateId, night, type, shutdownTime))).Task;
+        if (instanceId is null)
         {
             Log.Error("Buildplate start request was rejected/ignored");
             return null;
         }
 
         TaskCompletionSource<bool> completableFuture = new();
-        lock (instances)
+        lock (_instances)
         {
-            if (instances.ContainsKey(instanceId))
+            if (_instances.ContainsKey(instanceId))
                 completableFuture.SetResult(true);
             else
-                lock (pendingInstances)
+                lock (_pendingInstances)
                 {
-                    pendingInstances[instanceId] = completableFuture;
+                    _pendingInstances[instanceId] = completableFuture;
                 }
         }
 
@@ -112,26 +112,26 @@ public sealed class BuildplateInstancesManager
         return instanceId;
     }
 
-    public InstanceInfo? getInstanceInfo(string instanceId)
+    public InstanceInfo? GetInstanceInfo(string instanceId)
     {
-        lock (instances)
+        lock (_instances)
         {
-            return instances.GetOrDefault(instanceId, null);
+            return _instances.GetOrDefault(instanceId, null);
         }
     }
 
-    public string? getBuildplatePreview(byte[] serverData, bool night)
+    public string? GetBuildplatePreview(byte[] serverData, bool night)
     {
         Log.Information("Requesting buildplate preview");
 
-        string? preview = requestSender.request("buildplates", "preview", Json.Serialize(new PreviewRequest(Convert.ToBase64String(serverData), night))).Task.Result;
-        if (preview == null)
+        string? preview = _requestSender.request("buildplates", "preview", Json.Serialize(new PreviewRequest(Convert.ToBase64String(serverData), night))).Task.Result;
+        if (preview is null)
             Log.Error("Preview request was rejected/ignored");
 
         return preview;
     }
 
-    private Task handleEvent(Subscriber.Event @event)
+    private Task HandleEvent(Subscriber.Event @event)
     {
         switch (@event.type)
         {
@@ -141,33 +141,33 @@ public sealed class BuildplateInstancesManager
                     try
                     {
                         startNotification = Json.Deserialize<StartNotification>(@event.data)!;
-                        if (startNotification.playerId == null && startNotification.type != InstanceType.ENCOUNTER)
+                        if (startNotification.PlayerId is null && startNotification.Type != InstanceType.ENCOUNTER)
                         {
                             Log.Warning("Bad start notification");
                             return Task.CompletedTask;
                         }
 
-                        lock (instances)
+                        lock (_instances)
                         {
-                            Log.Information($"Buildplate instance {startNotification.instanceId} has started");
-                            instances[startNotification.instanceId] = new InstanceInfo(
-                                startNotification.type,
-                                startNotification.instanceId,
-                                startNotification.playerId,
-                                startNotification.encounterId,
-                                startNotification.buildplateId,
-                                startNotification.address,
-                                startNotification.port,
+                            Log.Information($"Buildplate instance {startNotification.InstanceId} has started");
+                            _instances[startNotification.InstanceId] = new InstanceInfo(
+                                startNotification.Type,
+                                startNotification.InstanceId,
+                                startNotification.PlayerId,
+                                startNotification.EncounterId,
+                                startNotification.BuildplateId,
+                                startNotification.Address,
+                                startNotification.Port,
                                 false,
                                 false
                             );
 
-                            instancesByBuildplateId.ComputeIfAbsent(startNotification.buildplateId, buildplateId => [])!.Add(startNotification.instanceId);
+                            _instancesByBuildplateId.ComputeIfAbsent(startNotification.BuildplateId, buildplateId => [])!.Add(startNotification.InstanceId);
                         }
 
-                        lock (pendingInstances)
+                        lock (_pendingInstances)
                         {
-                            TaskCompletionSource<bool>? completableFuture = pendingInstances.JavaRemove(startNotification.instanceId);
+                            TaskCompletionSource<bool>? completableFuture = _pendingInstances.JavaRemove(startNotification.InstanceId);
                             completableFuture?.SetResult(true);
                         }
                     }
@@ -181,22 +181,22 @@ public sealed class BuildplateInstancesManager
             case "ready":
                 {
                     string instanceId = @event.data;
-                    lock (instances)
+                    lock (_instances)
                     {
-                        InstanceInfo? instanceInfo = instances.GetOrDefault(instanceId, null);
-                        if (instanceInfo != null)
+                        InstanceInfo? instanceInfo = _instances.GetOrDefault(instanceId, null);
+                        if (instanceInfo is not null)
                         {
                             Log.Information($"Buildplate instance {instanceId} is ready");
-                            instances[instanceId] = new InstanceInfo(
-                                instanceInfo.type,
-                                instanceInfo.instanceId,
-                                instanceInfo.playerId,
-                                instanceInfo.encounterId,
-                                instanceInfo.buildplateId,
-                                instanceInfo.address,
-                                instanceInfo.port,
+                            _instances[instanceId] = new InstanceInfo(
+                                instanceInfo.Type,
+                                instanceInfo.InstanceId,
+                                instanceInfo.PlayerId,
+                                instanceInfo.EncounterId,
+                                instanceInfo.BuildplateId,
+                                instanceInfo.Address,
+                                instanceInfo.Port,
                                 true,
-                                instanceInfo.shuttingDown
+                                instanceInfo.ShuttingDown
                             );
                         }
                     }
@@ -206,21 +206,21 @@ public sealed class BuildplateInstancesManager
             case "shuttingDown":
                 {
                     string instanceId = @event.data;
-                    lock (instances)
+                    lock (_instances)
                     {
-                        InstanceInfo? instanceInfo = instances.GetValueOrDefault(instanceId);
+                        InstanceInfo? instanceInfo = _instances.GetValueOrDefault(instanceId);
                         if (instanceInfo is not null)
                         {
                             Log.Information($"Buildplate instance {instanceId} is shutting down");
-                            instances[instanceId] = new InstanceInfo(
-                                instanceInfo.type,
-                                instanceInfo.instanceId,
-                                instanceInfo.playerId,
-                                instanceInfo.encounterId,
-                                instanceInfo.buildplateId,
-                                instanceInfo.address,
-                                instanceInfo.port,
-                                instanceInfo.ready,
+                            _instances[instanceId] = new InstanceInfo(
+                                instanceInfo.Type,
+                                instanceInfo.InstanceId,
+                                instanceInfo.PlayerId,
+                                instanceInfo.EncounterId,
+                                instanceInfo.BuildplateId,
+                                instanceInfo.Address,
+                                instanceInfo.Port,
+                                instanceInfo.Ready,
                                 true
                             );
                         }
@@ -231,15 +231,15 @@ public sealed class BuildplateInstancesManager
             case "stopped":
                 {
                     string instanceId = @event.data;
-                    lock (instances)
+                    lock (_instances)
                     {
-                        var instanceInfo = instances.JavaRemove(instanceId);
-                        if (instanceInfo != null)
+                        var instanceInfo = _instances.JavaRemove(instanceId);
+                        if (instanceInfo is not null)
                         {
                             Log.Information($"Buildplate instance {instanceId} has stopped");
 
-                            var instanceIds = instancesByBuildplateId.GetOrDefault(instanceInfo.buildplateId);
-                            instanceIds?.Remove(instanceInfo.instanceId);
+                            var instanceIds = _instancesByBuildplateId.GetOrDefault(instanceInfo.BuildplateId);
+                            instanceIds?.Remove(instanceInfo.InstanceId);
                         }
                     }
                 }
@@ -251,27 +251,27 @@ public sealed class BuildplateInstancesManager
     }
 
     private sealed record StartRequest(
-        string? playerId,
-        string? encounterId,
-        string buildplateId,
-        bool night,
-        InstanceType type,
-        long shutdownTime
+        string? PlayerId,
+        string? EncounterId,
+        string BuildplateId,
+        bool Night,
+        InstanceType Type,
+        long ShutdownTime
     );
 
     private sealed record PreviewRequest(
-        string serverDataBase64,
-        bool night
+        string ServerDataBase64,
+        bool Night
     );
 
     private sealed record StartNotification(
-        string instanceId,
-        string? playerId,
-        string? encounterId,
-        string buildplateId,
-        string address,
-        int port,
-        InstanceType type
+        string InstanceId,
+        string? PlayerId,
+        string? EncounterId,
+        string BuildplateId,
+        string Address,
+        int Port,
+        InstanceType Type
     );
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -285,18 +285,18 @@ public sealed class BuildplateInstancesManager
     }
 
     public sealed record InstanceInfo(
-        InstanceType type,
+        InstanceType Type,
 
-        string instanceId,
+        string InstanceId,
 
-        string? playerId,
-        string? encounterId,
-        string buildplateId,
+        string? PlayerId,
+        string? EncounterId,
+        string BuildplateId,
 
-        string address,
-        int port,
+        string Address,
+        int Port,
 
-        bool ready,
-        bool shuttingDown
+        bool Ready,
+        bool ShuttingDown
     );
 }

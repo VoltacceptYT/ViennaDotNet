@@ -1,17 +1,17 @@
 ﻿namespace ViennaDotNet.ApiServer.Types.Workshop;
 
 public sealed record CraftingSlot(
-    string? sessionId,
-    string? recipeId,
-    OutputItem? output,
-    InputItem[]? escrow,
-    int completed,
-    int available,
-    int total,
-    string? nextCompletionUtc,
-    string? totalCompletionUtc,
-    State state,
-    BoostState? boostState,
-    UnlockPrice? unlockPrice,
-    int streamVersion
+    string? SessionId,
+    string? RecipeId,
+    OutputItem? Output,
+    InputItem[]? Escrow,
+    int Completed,
+    int Available,
+    int Total,
+    string? NextCompletionUtc,
+    string? TotalCompletionUtc,
+    State State,
+    BoostState? BoostState,
+    UnlockPrice? UnlockPrice,
+    int StreamVersion
 );

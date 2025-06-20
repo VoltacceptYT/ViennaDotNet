@@ -5,52 +5,52 @@ using static ViennaDotNet.ApiServer.Types.Buildplates.BuildplateInstance;
 namespace ViennaDotNet.ApiServer.Types.Buildplates;
 
 public sealed record BuildplateInstance(
-    string instanceId,
-    string partitionId,
-    string fqdn,
-    string ipV4Address,
-    int port,
-    bool serverReady,
-    ApplicationStatus applicationStatus,
-    ServerStatus serverStatus,
-    string metadata,
-    GameplayMetadata gameplayMetadata,
-    string roleInstance,    // TODO: find out what this is
-    Coordinate hostCoordinate
+    string InstanceId,
+    string PartitionId,
+    string Fqdn,
+    string IpV4Address,
+    int Port,
+    bool ServerReady,
+    ApplicationStatusE ApplicationStatus,
+    ServerStatusE ServerStatus,
+    string Metadata,
+    GameplayMetadataR GameplayMetadata,
+    string RoleInstance,    // TODO: find out what this is
+    Coordinate HostCoordinate
 )
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ApplicationStatus
+    public enum ApplicationStatusE
     {
         [JsonStringEnumMemberName("Unknown")] UNKNOWN,
         [JsonStringEnumMemberName("Ready")] READY
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ServerStatus
+    public enum ServerStatusE
     {
         [JsonStringEnumMemberName("Running")] RUNNING
     }
 
-    public sealed record GameplayMetadata(
-        string worldId,
-        string templateId,
-        string? spawningPlayerId,
-        string spawningClientBuildNumber,
-        string playerJoinCode,
-        Dimension dimension,
-        Offset offset,
-        int blocksPerMeter,
-        bool isFullSize,
-        GameplayMetadata.GameplayMode gameplayMode,
-        SurfaceOrientation surfaceOrientation,
-        string? augmentedImageSetId,
-        Rarity? rarity,
-        Dictionary<string, object> breakableItemToItemLootMap    // TODO: find out what this is
+    public sealed record GameplayMetadataR(
+        string WorldId,
+        string TemplateId,
+        string? SpawningPlayerId,
+        string SpawningClientBuildNumber,
+        string PlayerJoinCode,
+        Dimension Dimension,
+        Offset Offset,
+        int BlocksPerMeter,
+        bool IsFullSize,
+        GameplayMetadataR.GameplayModeE GameplayMode,
+        SurfaceOrientation SurfaceOrientation,
+        string? AugmentedImageSetId,
+        Rarity? Rarity,
+        Dictionary<string, object> BreakableItemToItemLootMap    // TODO: find out what this is
     )
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public enum GameplayMode
+        public enum GameplayModeE
         {
             [JsonStringEnumMemberName("Buildplate")] BUILDPLATE,
             [JsonStringEnumMemberName("BuildplatePlay")] BUILDPLATE_PLAY,

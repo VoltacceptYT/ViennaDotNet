@@ -3,17 +3,17 @@
 namespace ViennaDotNet.ApiServer.Types.Profile;
 
 public sealed record Profile(
-    Dictionary<int, Profile.Level> levelDistribution,
-    int totalExperience,
-    int level,
-    int currentLevelExperience,
-    int experienceRemaining,
-    int health,
-    float healthPercentage
+    Dictionary<int, Profile.LevelR> LevelDistribution,
+    int TotalExperience,
+    int Level,
+    int CurrentLevelExperience,
+    int ExperienceRemaining,
+    int Health,
+    float HealthPercentage
 )
 {
-    public sealed record Level(
-        int experienceRequired,
-        Rewards rewards
+    public sealed record LevelR(
+        int ExperienceRequired,
+        Rewards Rewards
     );
 }

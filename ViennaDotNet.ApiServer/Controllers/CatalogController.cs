@@ -28,24 +28,24 @@ public class CatalogController : ControllerBase
 
     [HttpGet("inventory/catalogv3")]
     public IActionResult GetItemsCatalog()
-        => Content(Json.Serialize(new EarthApiResponse(makeItemsCatalogApiResponse(catalog))), "application/json");
+        => Content(Json.Serialize(new EarthApiResponse(MakeItemsCatalogApiResponse(catalog))), "application/json");
 
     [HttpGet("recipes")]
     public IActionResult GetRecipeCatalog()
-        => Content(Json.Serialize(new EarthApiResponse(makeRecipesCatalogApiResponse(catalog))), "application/json");
+        => Content(Json.Serialize(new EarthApiResponse(MakeRecipesCatalogApiResponse(catalog))), "application/json");
 
     [HttpGet("journal/catalog")]
     public IActionResult GetJournalCatalog()
-        => Content(Json.Serialize(new EarthApiResponse(makeJournalCatalogApiResponse(catalog))), "application/json");
+        => Content(Json.Serialize(new EarthApiResponse(MakeJournalCatalogApiResponse(catalog))), "application/json");
 
     [HttpGet("products/catalog")]
     public IActionResult GetNFCBoostsCatalog()
-        => Content(Json.Serialize(new EarthApiResponse(makeNFCBoostsCatalogApiResponse(catalog))), "application/json");
+        => Content(Json.Serialize(new EarthApiResponse(MakeNFCBoostsCatalogApiResponse(catalog))), "application/json");
 
     // TODO: cache these?
-    private static ItemsCatalog makeItemsCatalogApiResponse(Catalog catalog)
+    private static ItemsCatalog MakeItemsCatalogApiResponse(Catalog catalog)
     {
-        ItemsCatalog.Item[] items = [.. catalog.itemsCatalog.items.Select(item =>
+        ItemsCatalog.ItemR[] items = [.. catalog.itemsCatalog.items.Select(item =>
         {
             string categoryString = item.category switch
             {
@@ -151,14 +151,14 @@ public class CatalogController : ControllerBase
                 mobDamage = 0;
             }
 
-            ItemsCatalog.Item.ItemData.BlockMetadata? blockMetadata;
+            ItemsCatalog.ItemR.ItemData.BlockMetadataR? blockMetadata;
             if (item.blockInfo is not null)
             {
-                blockMetadata = new ItemsCatalog.Item.ItemData.BlockMetadata(item.blockInfo.breakingHealth, item.blockInfo.efficiencyCategory);
+                blockMetadata = new ItemsCatalog.ItemR.ItemData.BlockMetadataR(item.blockInfo.breakingHealth, item.blockInfo.efficiencyCategory);
             }
             else if (item.mobInfo is not null)
             {
-                blockMetadata = new ItemsCatalog.Item.ItemData.BlockMetadata(item.mobInfo.health, "instant");
+                blockMetadata = new ItemsCatalog.ItemR.ItemData.BlockMetadataR(item.mobInfo.health, "instant");
             }
             else
             {
@@ -201,7 +201,7 @@ public class CatalogController : ControllerBase
                     TimeFormatter.FormatDuration(item.boostInfo.duration),
                     true,
                     item.boostInfo.level,
-                    [.. item.boostInfo.effects.Select(effect => BoostUtils.boostEffectToApiResponse(effect, item.boostInfo.duration))],
+                    [.. item.boostInfo.effects.Select(effect => BoostUtils.BoostEffectToApiResponse(effect, item.boostInfo.duration))],
                     item.boostInfo.triggeredOnDeath ? "Death" : null,
                     null
                 );
@@ -211,7 +211,7 @@ public class CatalogController : ControllerBase
                 boostMetadata = null;
             }
 
-            ItemsCatalog.Item.ItemData.JournalMetadata? journalMetadata;
+            ItemsCatalog.ItemR.ItemData.JournalMetadataR? journalMetadata;
             if (item.journalEntry is not null)
             {
                 string behaviorString = item.journalEntry.behavior switch
@@ -248,7 +248,7 @@ public class CatalogController : ControllerBase
                     _ => throw new UnreachableException(),
                 };
 
-                journalMetadata = new ItemsCatalog.Item.ItemData.JournalMetadata(
+                journalMetadata = new ItemsCatalog.ItemR.ItemData.JournalMetadataR(
                     item.journalEntry.group,
                     item.experience.journal,
                     item.journalEntry.order,
@@ -261,9 +261,9 @@ public class CatalogController : ControllerBase
                 journalMetadata = null;
             }
 
-            return new ItemsCatalog.Item(
+            return new ItemsCatalog.ItemR(
                 item.id,
-                new ItemsCatalog.Item.ItemData(
+                new ItemsCatalog.ItemR.ItemData(
                     item.name,
                     item.aux,
                     typeString,
@@ -275,7 +275,7 @@ public class CatalogController : ControllerBase
                     blockDamage,
                     health,
                     blockMetadata,
-                    new ItemsCatalog.Item.ItemData.ItemMetadata(
+                    new ItemsCatalog.ItemR.ItemData.ItemMetadataR(
                         useTypeString,
                         alternativeUseTypeString,
                         mobDamage,
@@ -288,7 +288,7 @@ public class CatalogController : ControllerBase
                     ),
                     boostMetadata,
                     journalMetadata,
-                    item.journalEntry is not null && item.journalEntry.sound is not null ? new ItemsCatalog.Item.ItemData.AudioMetadata(
+                    item.journalEntry is not null && item.journalEntry.sound is not null ? new ItemsCatalog.ItemR.ItemData.AudioMetadataR(
                         new Dictionary<string, string>() { ["journal"] = item.journalEntry.sound },
                         item.journalEntry.sound
                     ) : null,
@@ -299,8 +299,8 @@ public class CatalogController : ControllerBase
                 1,
                 item.stackable,
                 item.fuelInfo is not null ? new Types.Common.BurnRate(item.fuelInfo.burnTime, item.fuelInfo.heatPerSecond) : null,
-                item.fuelInfo is not null && item.fuelInfo.returnItemId != null ? [new ItemsCatalog.Item.ReturnItem(item.fuelInfo.returnItemId, 1)] : [],
-                item.consumeInfo != null && item.consumeInfo.returnItemId != null ? [new ItemsCatalog.Item.ReturnItem(item.consumeInfo.returnItemId, 1)] : [],
+                item.fuelInfo is not null && item.fuelInfo.returnItemId is not null ? [new ItemsCatalog.ItemR.ReturnItem(item.fuelInfo.returnItemId, 1)] : [],
+                item.consumeInfo is not null && item.consumeInfo.returnItemId is not null ? [new ItemsCatalog.ItemR.ReturnItem(item.consumeInfo.returnItemId, 1)] : [],
                 item.experience.tappable,
                 new Dictionary<string, int?>() { ["tappable"] = item.experience.tappable, ["encounter"] = item.experience.encounter, ["crafting"] = item.experience.crafting },
                 false
@@ -311,7 +311,7 @@ public class CatalogController : ControllerBase
         foreach (Catalog.ItemEfficiencyCategoriesCatalog.EfficiencyCategory efficiencyCategory in catalog.itemEfficiencyCategoriesCatalog.efficiencyCategories)
         {
             efficiencyCategories[efficiencyCategory.name] = new ItemsCatalog.EfficiencyCategory(
-                new ItemsCatalog.EfficiencyCategory.EfficiencyMap(
+                new ItemsCatalog.EfficiencyCategory.EfficiencyMapR(
                     efficiencyCategory.hand,
                     efficiencyCategory.hoe,
                     efficiencyCategory.axe,
@@ -330,7 +330,7 @@ public class CatalogController : ControllerBase
         return new ItemsCatalog(items, efficiencyCategories);
     }
 
-    private static RecipesCatalog makeRecipesCatalogApiResponse(Catalog catalog)
+    private static RecipesCatalog MakeRecipesCatalogApiResponse(Catalog catalog)
     {
         RecipesCatalog.CraftingRecipe[] crafting = [.. catalog.recipesCatalog.crafting.Select(recipe =>
         {
@@ -348,7 +348,7 @@ public class CatalogController : ControllerBase
                     categoryString,
                     TimeFormatter.FormatDuration(recipe.duration * 1000),
                     [.. recipe.ingredients.Select(ingredient => new RecipesCatalog.CraftingRecipe.Ingredient(ingredient.possibleItemIds, ingredient.count))],
-                    new RecipesCatalog.CraftingRecipe.Output(recipe.output.itemId, recipe.output.count),
+                    new RecipesCatalog.CraftingRecipe.OutputR(recipe.output.itemId, recipe.output.count),
                     [.. recipe.returnItems.Select(returnItem => new RecipesCatalog.CraftingRecipe.ReturnItem(returnItem.itemId, returnItem.count))],
                     false
             );
@@ -360,8 +360,8 @@ public class CatalogController : ControllerBase
                 recipe.id,
                 recipe.heatRequired,
                 recipe.input,
-                new RecipesCatalog.SmeltingRecipe.Output(recipe.output, 1),
-                recipe.returnItemId != null ? [new RecipesCatalog.SmeltingRecipe.ReturnItem(recipe.returnItemId, 1)] : [],
+                new RecipesCatalog.SmeltingRecipe.OutputR(recipe.output, 1),
+                recipe.returnItemId is not null ? [new RecipesCatalog.SmeltingRecipe.ReturnItem(recipe.returnItemId, 1)] : [],
                 false
             );
         })];
@@ -369,7 +369,7 @@ public class CatalogController : ControllerBase
         return new RecipesCatalog(crafting, smelting);
     }
 
-    private static JournalCatalog makeJournalCatalogApiResponse(Catalog catalog)
+    private static JournalCatalog MakeJournalCatalogApiResponse(Catalog catalog)
     {
         Dictionary<string, JournalCatalog.Item> items = [];
         foreach (Catalog.ItemJournalGroupsCatalog.JournalGroup group in catalog.itemJournalGroupsCatalog.groups)
@@ -397,7 +397,7 @@ public class CatalogController : ControllerBase
         return new JournalCatalog(items);
     }
 
-    private static NFCBoost[] makeNFCBoostsCatalogApiResponse(Catalog catalog)
+    private static NFCBoost[] MakeNFCBoostsCatalogApiResponse(Catalog catalog)
     {
         // TODO
         return [];

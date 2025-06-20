@@ -5,7 +5,7 @@ namespace ViennaDotNet.Common;
 
 public static class JavaLocator
 {
-    public static string locateJava(ILogger? logger = null)
+    public static string Locate(ILogger? logger = null)
     {
         logger ??= Log.Logger;
 

@@ -39,7 +39,7 @@ public class TokensController : ControllerBase
                 "tokens",
                 tokens.getTokens().Collect(() => new Dictionary<string, Token>(), (hashmap, token) =>
                 {
-                    hashmap[token.id] = tokenToApiResponse(token.token);
+                    hashmap[token.id] = TokenToApiResponse(token.token);
                 }, DictionaryExtensions.AddRange)
             }
         }, null));
@@ -65,11 +65,11 @@ public class TokensController : ControllerBase
                 {
                     Tokens tokens = (Tokens)results1.Get("tokens").Value;
                     Tokens.Token? removedToken = tokens.removeToken(tokenId);
-                    if (removedToken != null)
+                    if (removedToken is not null)
                     {
                         return new EarthDB.Query(true)
                             .Update("tokens", playerId, tokens)
-                            .Then(TokenUtils.doActionsOnRedeemedToken(removedToken, playerId, requestStartedOn, staticData), false)
+                            .Then(TokenUtils.DoActionsOnRedeemedToken(removedToken, playerId, requestStartedOn, staticData), false)
                             .Extra("success", true)
                             .Extra("token", removedToken);
                     }
@@ -87,9 +87,9 @@ public class TokensController : ControllerBase
             throw new ServerErrorException(ex);
         }
 
-        if (token != null)
+        if (token is not null)
         {
-            string resp = Json.Serialize(tokenToApiResponse(token));
+            string resp = Json.Serialize(TokenToApiResponse(token));
             return Content(resp, "application/json");
         }
         else
@@ -98,7 +98,7 @@ public class TokensController : ControllerBase
         }
     }
 
-    private static Token tokenToApiResponse(Tokens.Token token)
+    private static Token TokenToApiResponse(Tokens.Token token)
     {
         Dictionary<string, string> properties = [];
         switch (token.type)
@@ -110,7 +110,7 @@ public class TokensController : ControllerBase
 
         Rewards rewards = token.type switch
         {
-            Tokens.Token.Type.LEVEL_UP => Rewards.fromDBRewardsModel(((Tokens.LevelUpToken)token).rewards).setLevel(((Tokens.LevelUpToken)token).level),
+            Tokens.Token.Type.LEVEL_UP => Rewards.FromDBRewardsModel(((Tokens.LevelUpToken)token).rewards).setLevel(((Tokens.LevelUpToken)token).level),
             _ => new Rewards(),
         };
 
@@ -124,7 +124,7 @@ public class TokensController : ControllerBase
         return new Token(
                 Enum.Parse<Token.Type>(token.type.ToString()),
                 properties,
-                rewards.toApiResponse(),
+                rewards.ToApiResponse(),
                 lifetime
         );
     }

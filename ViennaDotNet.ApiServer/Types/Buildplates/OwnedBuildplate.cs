@@ -3,25 +3,25 @@
 namespace ViennaDotNet.ApiServer.Types.Buildplates;
 
 public sealed record OwnedBuildplate(
-    string id,
-    string templateId,
-    Dimension dimension,
-    Offset offset,
-    int blocksPerMeter,
-    OwnedBuildplate.Type type,
-    SurfaceOrientation surfaceOrientation,
-    string model,
-    int order,
-    bool locked,
-    int requiredLevel,
-    bool isModified,
-    string lastUpdated,
-    int numberOfBlocks,
-    string eTag
+    string Id,
+    string TemplateId,
+    Dimension Dimension,
+    Offset Offset,
+    int BlocksPerMeter,
+    OwnedBuildplate.TypeE Type,
+    SurfaceOrientation SurfaceOrientation,
+    string Model,
+    int Order,
+    bool Locked,
+    int RequiredLevel,
+    bool IsModified,
+    string LastUpdated,
+    int NumberOfBlocks,
+    string ETag
 )
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum Type
+    public enum TypeE
     {
         [JsonStringEnumMemberName("Survival")] SURVIVAL
     }

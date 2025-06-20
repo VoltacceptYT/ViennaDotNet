@@ -43,7 +43,7 @@ public static class BlockEntityTranslator
                     NbtMapBuilder builder = NbtMap.builder();
                     builder.putString("id", "FlowerPot");
                     NbtMap? contents = ((JavaBlocks.BedrockMapping.FlowerPotBlockEntity)blockEntityMapping).contents;
-                    if (contents != null)
+                    if (contents is not null)
                         builder.putCompound("PlantBlock", contents);
 
                     return builder.build();
@@ -54,7 +54,7 @@ public static class BlockEntityTranslator
 
                     builder.putString("id", "MovingBlock");
 
-                    if (javaBlockEntityInfo == null)
+                    if (javaBlockEntityInfo is null)
                     {
                         Log.Debug("Not sending moving block entity data until server provides data");
                         return null;
@@ -70,7 +70,7 @@ public static class BlockEntityTranslator
 
                     int javaBlockId = javaNbt.Get<IntTag>("blockStateId").Value;
                     JavaBlocks.BedrockMapping? bedrockMapping = JavaBlocks.getBedrockMapping(javaBlockId);
-                    if (bedrockMapping == null)
+                    if (bedrockMapping is null)
                     {
                         Log.Warning($"Moving block entity contained block with no mapping {JavaBlocks.getName(javaBlockId)}");
                         return null;
@@ -89,10 +89,10 @@ public static class BlockEntityTranslator
                         builder.putCompound("movingBlockExtra", movingBlockExtraBuilder.build());
                     }
 
-                    if (bedrockMapping.blockEntity != null)
+                    if (bedrockMapping.blockEntity is not null)
                     {
                         NbtMap? blockEntityNbt = BlockEntityTranslator.translateBlockEntity(bedrockMapping.blockEntity, null);
-                        if (blockEntityNbt != null)
+                        if (blockEntityNbt is not null)
                             builder.putCompound("movingEntity", blockEntityNbt.toBuilder().putInt("x", javaBlockEntityInfo.X).putInt("y", javaBlockEntityInfo.Y).putInt("z", javaBlockEntityInfo.Z).putBoolean("isMovable", false).build());
                     }
 

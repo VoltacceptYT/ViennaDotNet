@@ -78,7 +78,7 @@ public sealed class RequestHandler
             {
                 if (!closed)
                 {
-                    if (task.Result != null)
+                    if (task.Result is not null)
                         client.sendMessage(channelId, "REP " + requestId + ":" + task.Result);
                     else
                         client.sendMessage(channelId, "NREP " + requestId);

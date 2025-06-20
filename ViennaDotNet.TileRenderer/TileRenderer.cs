@@ -200,7 +200,7 @@ public class TileRenderer
                     _ => throw new Exception($"Unknown WKB type: {wkbType}"),
                 };
 
-                if (obj != null)
+                if (obj is not null)
                 {
                     layers[(int)targetLayer].Add(obj);
                 }

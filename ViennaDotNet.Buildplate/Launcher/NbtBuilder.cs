@@ -2,7 +2,7 @@
 
 namespace ViennaDotNet.Buildplate.Launcher;
 
-sealed class NbtBuilder
+internal sealed class NbtBuilder
 {
     public sealed class Compound
     {
@@ -13,7 +13,7 @@ sealed class NbtBuilder
             // empty
         }
 
-        public TagCompound build(string name)
+        public TagCompound Build(string name)
         {
             TagCompound tag = new TagCompound(name);
             foreach (var item in tags)
@@ -24,74 +24,70 @@ sealed class NbtBuilder
             return tag;
         }
 
-        public Compound put(string name, int value)
+        public Compound Add(string name, int value)
         {
             TagInt tag = new TagInt(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-        public Compound put(string name, byte value)
+        public Compound Add(string name, byte value)
         {
             TagByte tag = new TagByte(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-        public Compound put(string name, short value)
+        public Compound Add(string name, short value)
         {
             TagShort tag = new TagShort(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-        public Compound put(string name, long value)
+        public Compound Add(string name, long value)
         {
             TagLong tag = new TagLong(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-        public Compound put(string name, float value)
+        public Compound Add(string name, float value)
         {
             TagFloat tag = new TagFloat(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-        public Compound put(string name, double value)
+        public Compound Add(string name, double value)
         {
             TagDouble tag = new TagDouble(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-
-        public Compound put(string name, string value)
+        public Compound Add(string name, string value)
         {
             TagString tag = new TagString(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-
-        public Compound put(string name, int[] value)
+        public Compound Add(string name, int[] value)
         {
             TagIntArray tag = new TagIntArray(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-
-        public Compound put(string name, byte[] value)
+        public Compound Add(string name, byte[] value)
         {
             TagByteArray tag = new TagByteArray(name, value);
             tags.AddLast(tag);
             return this;
         }
 
-
-        public Compound put(string name, long[] value)
+        public Compound Add(string name, long[] value)
         {
             throw new NotImplementedException();
             //LongArrayTag tag = new LongArrayTag(name);
@@ -100,18 +96,16 @@ sealed class NbtBuilder
             //return this;
         }
 
-
-        public Compound put(string name, Compound value)
+        public Compound Add(string name, Compound value)
         {
-            TagCompound tag = value.build(name);
+            TagCompound tag = value.Build(name);
             tags.AddLast(tag);
             return this;
         }
 
-
-        public Compound put(string name, List value)
+        public Compound Add(string name, List value)
         {
-            TagList tag = value.build(name);
+            TagList tag = value.Build(name);
             tags.AddLast(tag);
             return this;
         }
@@ -127,7 +121,7 @@ sealed class NbtBuilder
             this.type = type;
         }
 
-        public TagList build(string name)
+        public TagList Build(string name)
         {
             TagList tag = new TagList(name, type);
             foreach (var item in tags)
@@ -138,70 +132,70 @@ sealed class NbtBuilder
             return tag;
         }
 
-        public List add(int value)
+        public List Add(int value)
         {
             TagInt tag = new TagInt("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(byte value)
+        public List Add(byte value)
         {
             TagByte tag = new TagByte("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(short value)
+        public List Add(short value)
         {
             TagShort tag = new TagShort("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(long value)
+        public List Add(long value)
         {
             TagLong tag = new TagLong("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(float value)
+        public List Add(float value)
         {
             TagFloat tag = new TagFloat("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(double value)
+        public List Add(double value)
         {
             TagDouble tag = new TagDouble("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(string value)
+        public List Add(string value)
         {
             TagString tag = new TagString("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(int[] value)
+        public List Add(int[] value)
         {
             TagIntArray tag = new TagIntArray("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(byte[] value)
+        public List Add(byte[] value)
         {
             TagByteArray tag = new TagByteArray("", value);
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(long[] value)
+        public List Add(long[] value)
         {
             throw new NotImplementedException();
             //LongArrayTag tag = new LongArrayTag("");
@@ -210,16 +204,16 @@ sealed class NbtBuilder
             //return this;
         }
 
-        public List add(Compound value)
+        public List Add(Compound value)
         {
-            TagCompound tag = value.build("");
+            TagCompound tag = value.Build("");
             tags.AddLast(tag);
             return this;
         }
 
-        public List add(List value)
+        public List Add(List value)
         {
-            TagList tag = value.build("");
+            TagList tag = value.Build("");
             tags.AddLast(tag);
             return this;
         }

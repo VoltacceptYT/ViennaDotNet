@@ -195,7 +195,7 @@ public class NetworkServer
                         if (length == 0)
                         {
                             string? id = networkServer.server.store([]);
-                            if (id != null)
+                            if (id is not null)
                                 sendMessage("OK " + id);
                             else
                                 sendMessage("ERR");
@@ -210,7 +210,7 @@ public class NetworkServer
                             return -1;
 
                         byte[]? data = networkServer.server.load(id);
-                        if (data != null)
+                        if (data is not null)
                         {
                             sendMessage("OK " + data.Length.ToString());
                             sendData(data);
@@ -252,7 +252,7 @@ public class NetworkServer
                 case "STORE":
                     {
                         string? id = networkServer.server.store(data);
-                        if (id != null)
+                        if (id is not null)
                             sendMessage("OK " + id);
                         else
                             sendMessage("ERR");

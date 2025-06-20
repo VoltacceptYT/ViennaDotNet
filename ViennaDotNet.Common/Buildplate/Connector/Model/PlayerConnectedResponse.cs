@@ -3,6 +3,6 @@
 namespace ViennaDotNet.Buildplate.Connector.Model;
 
 public sealed record PlayerConnectedResponse(
-    bool accepted,
-    InventoryResponse? initialInventoryContents
+    bool Accepted,
+    InventoryResponse? InitialInventoryContents
 );

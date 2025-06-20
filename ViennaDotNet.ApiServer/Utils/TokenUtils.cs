@@ -6,7 +6,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public static class TokenUtils
 {
-    public static EarthDB.Query addToken(string playerId, Tokens.Token token)
+    public static EarthDB.Query AddToken(string playerId, Tokens.Token token)
     {
         EarthDB.Query getQuery = new EarthDB.Query(true);
         getQuery.Get("tokens", playerId, typeof(Tokens));
@@ -24,7 +24,7 @@ public static class TokenUtils
     }
 
     // does not handle redeeming the token itself (removing it from the list of tokens belonging to the player)
-    public static EarthDB.Query doActionsOnRedeemedToken(Tokens.Token token, string playerId, long currentTime, StaticData.StaticData staticData)
+    public static EarthDB.Query DoActionsOnRedeemedToken(Tokens.Token token, string playerId, long currentTime, StaticData.StaticData staticData)
     {
         EarthDB.Query getQuery = new EarthDB.Query(true);
 
@@ -38,9 +38,9 @@ public static class TokenUtils
                     {
                         EarthDB.Query updateQuery = new EarthDB.Query(true);
 
-                        updateQuery.Then(ActivityLogUtils.addEntry(playerId, new ActivityLog.LevelUpEntry(currentTime, levelUpToken.level)));
+                        updateQuery.Then(ActivityLogUtils.AddEntry(playerId, new ActivityLog.LevelUpEntry(currentTime, levelUpToken.level)));
 
-                        updateQuery.Then(Rewards.fromDBRewardsModel(levelUpToken.rewards).toRedeemQuery(playerId, currentTime, staticData));
+                        updateQuery.Then(Rewards.FromDBRewardsModel(levelUpToken.rewards).toRedeemQuery(playerId, currentTime, staticData));
 
                         return updateQuery;
                     }, false);
@@ -54,7 +54,7 @@ public static class TokenUtils
                     {
                         EarthDB.Query updateQuery = new EarthDB.Query(true);
 
-                        updateQuery.Then(ActivityLogUtils.addEntry(playerId, new ActivityLog.JournalItemUnlockedEntry(currentTime, journalItemUnlockedToken.itemId)));
+                        updateQuery.Then(ActivityLogUtils.AddEntry(playerId, new ActivityLog.JournalItemUnlockedEntry(currentTime, journalItemUnlockedToken.itemId)));
 
                         /*int experiencePoints = staticData.catalog.itemsCatalog.getItem(journalItemUnlockedToken.itemId).experience().journal();
                         if (experiencePoints > 0)

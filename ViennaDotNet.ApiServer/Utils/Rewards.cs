@@ -9,13 +9,13 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public sealed class Rewards
 {
-    private int rubies;
-    private int experiencePoints;
+    private int _rubies;
+    private int _experiencePoints;
 
-    private int? level;
-    private Dictionary<string, int?> items = [];
-    private HashSet<string> buildplates = [];
-    private HashSet<string> challenges = [];
+    private int? _level;
+    private Dictionary<string, int?> _items = [];
+    private HashSet<string> _buildplates = [];
+    private HashSet<string> _challenges = [];
 
     public Rewards()
     {
@@ -24,58 +24,60 @@ public sealed class Rewards
 
     public Rewards setLevel(int level)
     {
-        this.level = level;
+        _level = level;
         return this;
     }
 
     public Rewards addItem(string id, int count)
     {
-        items[id] = items.GetOrDefault(id, 0) + count;
+        _items[id] = _items.GetOrDefault(id, 0) + count;
         return this;
     }
 
     public Rewards addBuildplate(string id)
     {
-        buildplates.Add(id);
+        _buildplates.Add(id);
         return this;
     }
 
     public Rewards addChallenge(string id)
     {
-        challenges.Add(id);
+        _challenges.Add(id);
         return this;
     }
 
     public Rewards addRubies(int rubies)
     {
-        this.rubies += rubies;
+        _rubies += rubies;
         return this;
     }
 
     public Rewards addExperiencePoints(int experiencePoints)
     {
-        this.experiencePoints += experiencePoints;
+        _experiencePoints += experiencePoints;
         return this;
     }
 
     public EarthDB.Query toRedeemQuery(string playerId, long currentTime, StaticData.StaticData staticData)
     {
         EarthDB.Query getQuery = new EarthDB.Query(true);
-        if (rubies > 0 || experiencePoints > 0)
+        if (_rubies > 0 || _experiencePoints > 0)
+        {
             getQuery.Get("profile", playerId, typeof(Profile));
+        }
 
-        if (!items.IsEmpty())
+        if (!_items.IsEmpty())
         {
             getQuery.Get("inventory", playerId, typeof(Inventory));
             getQuery.Get("journal", playerId, typeof(Journal));
         }
 
-        if (!buildplates.IsEmpty())
+        if (!_buildplates.IsEmpty())
         {
             // TODO
         }
 
-        if (!challenges.IsEmpty())
+        if (!_challenges.IsEmpty())
         {
             // TODO
         }
@@ -84,28 +86,32 @@ public sealed class Rewards
         getQuery.Then(results =>
         {
             bool checkLevelUp = false;
-            if (rubies > 0 || experiencePoints > 0)
+            if (_rubies > 0 || _experiencePoints > 0)
             {
                 Profile profile = (Profile)results.Get("profile").Value;
-                if (rubies > 0)
-                    profile.rubies.earned += rubies;
+                if (_rubies > 0)
+                {
+                    profile.rubies.earned += _rubies;
+                }
 
-                if (experiencePoints > 0)
-                    profile.experience += experiencePoints;
+                if (_experiencePoints > 0)
+                {
+                    profile.experience += _experiencePoints;
+                }
 
                 updateQuery.Update("profile", playerId, profile);
 
-                if (experiencePoints > 0)
+                if (_experiencePoints > 0)
                 {
                     checkLevelUp = true;
                 }
             }
 
-            if (!items.IsEmpty())
+            if (!_items.IsEmpty())
             {
                 Inventory inventory = (Inventory)results.Get("inventory").Value;
                 Journal journal = (Journal)results.Get("journal").Value;
-                foreach (var entry in items)
+                foreach (var entry in _items)
                 {
                     string id = entry.Key;
                     int quantity = entry.Value ?? 0; // idk, no null checks here, so I added ?? 0
@@ -115,15 +121,19 @@ public sealed class Rewards
                         Debug.Assert(item is not null);
 
                         if (item.stackable)
+                        {
                             inventory.addItems(id, quantity);
+                        }
                         else
+                        {
                             inventory.addItems(id, [.. Java.IntStream.Range(0, quantity).Select(index => new NonStackableItemInstance(U.RandomUuid().ToString(), 0))]);
+                        }
 
                         if (journal.addCollectedItem(id, currentTime, quantity) == 0)
                         {
                             if (item.journalEntry is not null)
                             {
-                                updateQuery.Then(TokenUtils.addToken(playerId, new Tokens.JournalItemUnlockedToken(id)));
+                                updateQuery.Then(TokenUtils.AddToken(playerId, new Tokens.JournalItemUnlockedToken(id)));
                             }
                         }
                     }
@@ -133,19 +143,19 @@ public sealed class Rewards
                 updateQuery.Update("journal", playerId, journal);
             }
 
-            if (!buildplates.IsEmpty())
+            if (!_buildplates.IsEmpty())
             {
                 // TODO
             }
 
-            if (!challenges.IsEmpty())
+            if (!_challenges.IsEmpty())
             {
                 // TODO
             }
 
             if (checkLevelUp)
             {
-                updateQuery.Then(LevelUtils.checkAndHandlePlayerLevelUp(playerId, currentTime, staticData));
+                updateQuery.Then(LevelUtils.CheckAndHandlePlayerLevelUp(playerId, currentTime, staticData));
             }
 
             return updateQuery;
@@ -155,21 +165,19 @@ public sealed class Rewards
         return getQuery;
     }
 
-    public Types.Common.Rewards toApiResponse()
-    {
-        return new Types.Common.Rewards(
-            rubies,
-            experiencePoints,
-            level,
-            [.. items.Select(item => new Types.Common.Rewards.Item(item.Key, item.Value ?? 0))],
-            [.. buildplates],
-            [.. challenges.Select(challenge => new Types.Common.Rewards.Challenge(challenge))],
+    public Types.Common.Rewards ToApiResponse()
+        => new Types.Common.Rewards(
+            _rubies,
+            _experiencePoints,
+            _level,
+            [.. _items.Select(item => new Types.Common.Rewards.Item(item.Key, item.Value ?? 0))],
+            [.. _buildplates],
+            [.. _challenges.Select(challenge => new Types.Common.Rewards.Challenge(challenge))],
             [],
             []
         );
-    }
 
-    public static Rewards fromDBRewardsModel(DB.Models.Common.Rewards rewardsModel)
+    public static Rewards FromDBRewardsModel(DB.Models.Common.Rewards rewardsModel)
     {
         Rewards rewards = new Rewards();
         rewards.addRubies(rewardsModel.rubies);
@@ -183,15 +191,13 @@ public sealed class Rewards
         return rewards;
     }
 
-    public DB.Models.Common.Rewards toDBRewardsModel()
-    {
-        return new DB.Models.Common.Rewards(
-            rubies,
-            experiencePoints,
-            level,
-            new(items),
-            [.. buildplates],
-            [.. challenges]
+    public DB.Models.Common.Rewards ToDBRewardsModel()
+        => new DB.Models.Common.Rewards(
+            _rubies,
+            _experiencePoints,
+            _level,
+            new(_items),
+            [.. _buildplates],
+            [.. _challenges]
         );
-    }
 }

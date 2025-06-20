@@ -78,7 +78,7 @@ public sealed partial class Publisher
         {
             lock (_lock)
             {
-                if (currentPendingEventResult != null)
+                if (currentPendingEventResult is not null)
                 {
                     currentPendingEventResult.SetResult(true);
                     currentPendingEventResult = null;

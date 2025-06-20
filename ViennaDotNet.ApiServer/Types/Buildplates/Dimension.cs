@@ -1,6 +1,7 @@
 ﻿namespace ViennaDotNet.ApiServer.Types.Buildplates;
 
+// TODO: record struct?
 public sealed record Dimension(
-    int x,
-    int z
+    int X,
+    int Z
 );

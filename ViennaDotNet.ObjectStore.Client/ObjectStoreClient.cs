@@ -193,7 +193,7 @@ public class ObjectStoreClient
 
             lock (_lock)
             {
-                if (currentCommand != null)
+                if (currentCommand is not null)
                 {
                     currentCommand.completableFuture.TrySetResult(currentCommand.type == Command.Type.DELETE ? false : null);
                     currentCommand = null;
@@ -298,7 +298,7 @@ public class ObjectStoreClient
             else
             {
                 queuedCommands.AddLast(command);
-                if (currentCommand == null)
+                if (currentCommand is null)
                     sendNextCommand();
             }
         }
@@ -347,7 +347,7 @@ public class ObjectStoreClient
             if (closed)
                 return -1;
 
-            if (currentCommand == null)
+            if (currentCommand is null)
                 return -1;
 
             string[] parts = message.Split(' ', 2);
@@ -438,7 +438,7 @@ public class ObjectStoreClient
             if (closed)
                 return false;
 
-            if (currentCommand == null)
+            if (currentCommand is null)
                 throw new InvalidOperationException();
 
             string[] parts = message.Split(' ', 2);

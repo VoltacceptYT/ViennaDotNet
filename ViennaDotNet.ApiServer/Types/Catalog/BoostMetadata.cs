@@ -3,15 +3,15 @@
 namespace ViennaDotNet.ApiServer.Types.Catalog;
 
 public sealed record BoostMetadata(
-    string name,
-    string type,
-    string attribute,
-    bool canBeDeactivated,
-    bool canBeRemoved,
-    string? activeDuration,
-    bool additive,
-    int? level,
-    Effect[] effects,
-    string? scenario,
-    string? cooldown
+    string Name,
+    string Type,
+    string Attribute,
+    bool CanBeDeactivated,
+    bool CanBeRemoved,
+    string? ActiveDuration,
+    bool Additive,
+    int? Level,
+    Effect[] Effects,
+    string? Scenario,
+    string? Cooldown
 );

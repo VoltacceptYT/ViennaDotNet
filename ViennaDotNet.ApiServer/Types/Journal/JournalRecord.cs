@@ -5,21 +5,21 @@ using static ViennaDotNet.ApiServer.Types.Journal.JournalRecord;
 namespace ViennaDotNet.ApiServer.Types.Journal;
 
 public sealed record JournalRecord(
-     Dictionary<string, InventoryJournalEntry> inventoryJournal,
-     ActivityLogEntry[] activityLog
+     Dictionary<string, InventoryJournalEntry> InventoryJournal,
+     ActivityLogEntry[] ActivityLog
 )
 {
     public sealed record InventoryJournalEntry(
-        string firstSeen,
-        string lastSeen,
-        int amountCollected
+        string FirstSeen,
+        string LastSeen,
+        int AmountCollected
     );
 
     public sealed record ActivityLogEntry(
-        ActivityLogEntry.Type scenario,
-        string eventTime,
-        Rewards rewards,
-        Dictionary<string, string> properties
+        ActivityLogEntry.Type Scenario,
+        string EventTime,
+        Rewards Rewards,
+        Dictionary<string, string> Properties
     )
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]

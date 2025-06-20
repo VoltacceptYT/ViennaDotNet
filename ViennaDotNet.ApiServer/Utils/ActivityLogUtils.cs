@@ -5,7 +5,7 @@ namespace ViennaDotNet.ApiServer.Utils;
 
 public static class ActivityLogUtils
 {
-    public static EarthDB.Query addEntry(string playerId, ActivityLog.Entry entry)
+    public static EarthDB.Query AddEntry(string playerId, ActivityLog.Entry entry)
     {
         EarthDB.Query getQuery = new EarthDB.Query(true);
         getQuery.Get("activityLog", playerId, typeof(ActivityLog));
