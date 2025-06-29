@@ -18,6 +18,7 @@ using ViennaDotNet.DB.Models.Global;
 using ViennaDotNet.DB.Models.Player;
 using ViennaDotNet.ObjectStore.Client;
 using ViennaDotNet.StaticData;
+using Buildplates = ViennaDotNet.DB.Models.Player.Buildplates;
 
 namespace ViennaDotNet.ApiServer.Controllers;
 
@@ -52,15 +53,13 @@ public class BuildplatesController : ControllerBase
             throw new ServerErrorException(ex);
         }
 
-        // not null is ensured in .Where
-#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         OwnedBuildplate[] ownedBuildplates = [.. buildplatesModel.GetBuildplates().Select(async buildplateEntry =>
         {
             byte[]? previewData = (await objectStoreClient.Get(buildplateEntry.Buildplate.PreviewObjectId).Task) as byte[];
             if (previewData is null)
             {
                 Log.Error($"Preview object {buildplateEntry.Buildplate.PreviewObjectId} for buildplate {buildplateEntry.Id} could not be loaded from object store");
-                return null;
+                return null!;
             }
 
             string model = Encoding.ASCII.GetString(previewData);
@@ -83,7 +82,6 @@ public class BuildplatesController : ControllerBase
             );
         }).Where(ownedBuildplate => ownedBuildplate is not null)
         .Select(task => task.Result)];
-#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
 
         string resp = Json.Serialize(new EarthApiResponse(ownedBuildplates));
         return Content(resp, "application/json");

@@ -2,5 +2,5 @@ shop
 encounters - convert (maybe even manually) the data in weird format to normal buildplate format and then MCEToJava
 rewrite launcher
 admin panel - manage player inventory, stats, boosts, buildplates, ...
-switch to System.Text.Json
 Get rid of LinkedList
+get the rest of shop buidlplates - the ones in the weird format

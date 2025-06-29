@@ -12,7 +12,6 @@ using ViennaDotNet.DB.Models.Global;
 using ViennaDotNet.DB.Models.Player;
 using ViennaDotNet.EventBus.Client;
 using ViennaDotNet.ObjectStore.Client;
-using static ViennaDotNet.DB.Models.Player.Buildplates;
 
 namespace ViennaDotNet.Buildplate_Importer;
 

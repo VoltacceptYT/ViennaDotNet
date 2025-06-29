@@ -12,6 +12,7 @@ using ViennaDotNet.DB.Models.Player;
 using ViennaDotNet.EventBus.Client;
 using ViennaDotNet.ObjectStore.Client;
 using ViennaDotNet.StaticData;
+using Buildplates = ViennaDotNet.DB.Models.Player.Buildplates;
 using CICIBIEType = ViennaDotNet.StaticData.Catalog.ItemsCatalogR.Item.BoostInfoR.Effect.TypeE;
 
 namespace ViennaDotNet.ApiServer.Utils;
@@ -85,7 +86,7 @@ public sealed class BuildplateInstanceRequestHandler
                                 if (requestWithInstanceId is null)
                                     return null;
 
-                                PlayerConnectedResponse? playerConnectedResponse = HandlePlayerConnected(requestWithInstanceId.InstanceId, requestWithInstanceId.Request);
+                                PlayerConnectedResponse? playerConnectedResponse = await HandlePlayerConnected(requestWithInstanceId.InstanceId, requestWithInstanceId.Request);
                                 return playerConnectedResponse is not null ? Json.Serialize(playerConnectedResponse) : null;
                             }
                         case "playerDisconnected":
@@ -94,7 +95,7 @@ public sealed class BuildplateInstanceRequestHandler
                                 if (requestWithInstanceId is null)
                                     return null;
 
-                                PlayerDisconnectedResponse? playerDisconnectedResponse = HandlePlayerDisconnected(requestWithInstanceId.InstanceId, requestWithInstanceId.Request, request.Timestamp);
+                                PlayerDisconnectedResponse? playerDisconnectedResponse = await HandlePlayerDisconnected(requestWithInstanceId.InstanceId, requestWithInstanceId.Request, request.Timestamp);
                                 return playerDisconnectedResponse is not null ? Json.Serialize(playerDisconnectedResponse) : null;
                             }
                         case "playerDead":
@@ -116,7 +117,7 @@ public sealed class BuildplateInstanceRequestHandler
                                     return null;
                                 }
 
-                                InitialPlayerStateResponse? initialPlayerStateResponse = HandleGetInitialPlayerState(requestWithInstanceId.InstanceId, requestWithInstanceId.Request, request.Timestamp);
+                                InitialPlayerStateResponse? initialPlayerStateResponse = await HandleGetInitialPlayerState(requestWithInstanceId.InstanceId, requestWithInstanceId.Request, request.Timestamp);
                                 return initialPlayerStateResponse is not null ? Json.Serialize(initialPlayerStateResponse) : null;
                             }
                         case "getInventory":
@@ -125,7 +126,7 @@ public sealed class BuildplateInstanceRequestHandler
                                 if (requestWithInstanceId is null)
                                     return null;
 
-                                InventoryResponse? inventoryResponse = HandleGetInventory(requestWithInstanceId.InstanceId, requestWithInstanceId.Request);
+                                InventoryResponse? inventoryResponse = await HandleGetInventory(requestWithInstanceId.InstanceId, requestWithInstanceId.Request);
                                 return inventoryResponse is not null ? Json.Serialize(inventoryResponse) : null;
                             }
                         case "inventoryAdd":
@@ -133,7 +134,7 @@ public sealed class BuildplateInstanceRequestHandler
                                 RequestWithInstanceId<InventoryAddItemMessage>? requestWithInstanceId = ReadRequest<InventoryAddItemMessage>(request.Data);
                                 return requestWithInstanceId is null
                                     ? null
-                                    : HandleInventoryAdd(requestWithInstanceId.InstanceId, requestWithInstanceId.Request, request.Timestamp) ? "" : null;
+                                    : await HandleInventoryAdd(requestWithInstanceId.InstanceId, requestWithInstanceId.Request, request.Timestamp) ? "" : null;
                             }
                         case "inventoryRemove":
                             {
@@ -150,7 +151,7 @@ public sealed class BuildplateInstanceRequestHandler
 
                                 return requestWithInstanceId is null
                                     ? null
-                                    : HandleInventoryUpdateWear(requestWithInstanceId.InstanceId, requestWithInstanceId.Request) ? "" : null;
+                                    : await HandleInventoryUpdateWear(requestWithInstanceId.InstanceId, requestWithInstanceId.Request) ? "" : null;
                             }
                         case "inventorySetHotbar":
                             {
@@ -158,7 +159,7 @@ public sealed class BuildplateInstanceRequestHandler
 
                                 return requestWithInstanceId is null
                                     ? null
-                                    : HandleInventorySetHotbar(requestWithInstanceId.InstanceId, requestWithInstanceId.Request) ? "" : null;
+                                    : await HandleInventorySetHotbar(requestWithInstanceId.InstanceId, requestWithInstanceId.Request) ? "" : null;
                             }
                         default:
                             return null;
@@ -198,9 +199,9 @@ public sealed class BuildplateInstanceRequestHandler
 
     private async Task<BuildplateLoadResponse?> HandleLoad(string playerId, string buildplateId)
     {
-        EarthDB.Results results = new EarthDB.Query(false)
+        EarthDB.Results results = await new EarthDB.Query(false)
             .Get("buildplates", playerId, typeof(Buildplates))
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
         Buildplates buildplates = (Buildplates)results.Get("buildplates").Value;
 
         Buildplates.Buildplate? buildplate = buildplates.GetBuildplate(buildplateId);
@@ -221,9 +222,9 @@ public sealed class BuildplateInstanceRequestHandler
 
     private async Task<BuildplateLoadResponse?> HandleLoadShared(string sharedBuildplateId)
     {
-        EarthDB.Results results = new EarthDB.Query(false)
+        EarthDB.Results results = await new EarthDB.Query(false)
             .Get("sharedBuildplates", "", typeof(SharedBuildplates))
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
         SharedBuildplates sharedBuildplates = (SharedBuildplates)results.Get("sharedBuildplates").Value;
 
         SharedBuildplates.SharedBuildplate? sharedBuildplate = sharedBuildplates.GetSharedBuildplate(sharedBuildplateId);
@@ -246,9 +247,9 @@ public sealed class BuildplateInstanceRequestHandler
 
     private async Task<BuildplateLoadResponse?> HandleLoadEncounter(string encounterBuildplateId)
     {
-        EarthDB.Results results = new EarthDB.Query(false)
+        EarthDB.Results results = await new EarthDB.Query(false)
             .Get("encounterBuildplates", "", typeof(EncounterBuildplates))
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
         EncounterBuildplates encounterBuildplates = (EncounterBuildplates)results.Get("encounterBuildplates").Value;
 
         EncounterBuildplates.EncounterBuildplate? encounterBuildplate = encounterBuildplates.GetEncounterBuildplate(encounterBuildplateId);
@@ -297,9 +298,9 @@ public sealed class BuildplateInstanceRequestHandler
             return false;
         }
 
-        EarthDB.Results results = new EarthDB.Query(false)
+        EarthDB.Results results = await new EarthDB.Query(false)
             .Get("buildplates", playerId, typeof(Buildplates))
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
         Buildplates.Buildplate? buildplateUnsafeForPreviewGenerator = ((Buildplates)results.Get("buildplates").Value).GetBuildplate(buildplateId);
         if (buildplateUnsafeForPreviewGenerator is null)
             return false;
@@ -327,7 +328,7 @@ public sealed class BuildplateInstanceRequestHandler
 
         try
         {
-            EarthDB.Results results1 = new EarthDB.Query(true)
+            EarthDB.Results results1 = await new EarthDB.Query(true)
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .Then(results2 =>
                 {
@@ -335,19 +336,20 @@ public sealed class BuildplateInstanceRequestHandler
                     Buildplates.Buildplate? buildplate = buildplates.GetBuildplate(buildplateId);
                     if (buildplate is not null)
                     {
-                        buildplate.LastModified = timestamp;
-
                         string oldServerDataObjectId = buildplate.ServerDataObjectId;
-                        buildplate.ServerDataObjectId = serverDataObjectId;
+
+                        buildplate = buildplate with { LastModified = timestamp, ServerDataObjectId = serverDataObjectId };
 
                         string oldPreviewObjectId;
                         if (previewObjectId is not null)
                         {
                             oldPreviewObjectId = buildplate.PreviewObjectId;
-                            buildplate.PreviewObjectId = previewObjectId;
+                            buildplate = buildplate with { PreviewObjectId = previewObjectId };
                         }
                         else
+                        {
                             oldPreviewObjectId = "";
+                        }
 
                         return new EarthDB.Query(true)
                             .Update("buildplates", playerId, buildplates)
@@ -361,7 +363,7 @@ public sealed class BuildplateInstanceRequestHandler
                             .Extra("exists", false);
                     }
                 })
-                .Execute(_earthDB);
+                .ExecuteAsync(_earthDB);
 
             bool exists = (bool)results1.GetExtra("exists");
             if (exists)
@@ -400,7 +402,7 @@ public sealed class BuildplateInstanceRequestHandler
         }
     }
 
-    private PlayerConnectedResponse? HandlePlayerConnected(string instanceId, PlayerConnectedRequest playerConnectedRequest)
+    private async Task<PlayerConnectedResponse?> HandlePlayerConnected(string instanceId, PlayerConnectedRequest playerConnectedRequest)
     {
         // TODO: check join code etc.
 
@@ -422,10 +424,10 @@ public sealed class BuildplateInstanceRequestHandler
                 break;
             case BuildplateInstancesManager.InstanceType.PLAY:
                 {
-                    EarthDB.Results results = new EarthDB.Query(false)
+                    EarthDB.Results results = await new EarthDB.Query(false)
                         .Get("inventory", playerConnectedRequest.Uuid, typeof(Inventory))
                         .Get("hotbar", playerConnectedRequest.Uuid, typeof(Hotbar))
-                        .Execute(_earthDB);
+                        .ExecuteAsync(_earthDB);
 
                     Inventory inventory = (Inventory)results.Get("inventory").Value;
                     Hotbar hotbar = (Hotbar)results.Get("hotbar").Value;
@@ -446,9 +448,9 @@ public sealed class BuildplateInstanceRequestHandler
             case BuildplateInstancesManager.InstanceType.SHARED_BUILD or BuildplateInstancesManager.InstanceType.SHARED_PLAY:
 
                 {
-                    EarthDB.Results results = new EarthDB.Query(false)
+                    EarthDB.Results results = await new EarthDB.Query(false)
                         .Get("sharedBuildplates", "", typeof(SharedBuildplates))
-                        .Execute(_earthDB);
+                        .ExecuteAsync(_earthDB);
                     SharedBuildplates sharedBuildplates = (SharedBuildplates)results.Get("sharedBuildplates").Value;
                     SharedBuildplates.SharedBuildplate? sharedBuildplate = sharedBuildplates.GetSharedBuildplate(instanceInfo.BuildplateId);
                     if (sharedBuildplate is null)
@@ -484,7 +486,7 @@ public sealed class BuildplateInstanceRequestHandler
                 break;
             case BuildplateInstancesManager.InstanceType.ENCOUNTER:
                 {
-                    EarthDB.Results results = new EarthDB.Query(true)
+                    EarthDB.Results results = await new EarthDB.Query(true)
                         .Get("inventory", playerConnectedRequest.Uuid, typeof(Inventory))
                         .Get("hotbar", playerConnectedRequest.Uuid, typeof(Hotbar))
                         .Then(results1 =>
@@ -529,7 +531,7 @@ public sealed class BuildplateInstanceRequestHandler
                                 .Update("hotbar", playerConnectedRequest.Uuid, hotbar)
                                 .Extra("inventoryResponse", inventoryResponse);
                         })
-                        .Execute(_earthDB);
+                        .ExecuteAsync(_earthDB);
 
                     initialInventoryContents = (InventoryResponse)results.GetExtra("inventoryResponse");
                 }
@@ -552,7 +554,7 @@ public sealed class BuildplateInstanceRequestHandler
         return playerConnectedResponse;
     }
 
-    private PlayerDisconnectedResponse? HandlePlayerDisconnected(string instanceId, PlayerDisconnectedRequest playerDisconnectedRequest, long timestamp)
+    private async Task<PlayerDisconnectedResponse?> HandlePlayerDisconnected(string instanceId, PlayerDisconnectedRequest playerDisconnectedRequest, long timestamp)
     {
         BuildplateInstancesManager.InstanceInfo? instanceInfo = _buildplateInstancesManager.GetInstanceInfo(instanceId);
         if (instanceInfo is null)
@@ -570,7 +572,7 @@ public sealed class BuildplateInstanceRequestHandler
                 return null;
             }
 
-            EarthDB.Results results = new EarthDB.Query(true)
+            EarthDB.Results results = await new EarthDB.Query(true)
                 .Get("inventory", playerDisconnectedRequest.PlayerId, typeof(Inventory))
                 .Get("journal", playerDisconnectedRequest.PlayerId, typeof(Journal))
                 .Then(results1 =>
@@ -639,7 +641,7 @@ public sealed class BuildplateInstanceRequestHandler
 
                     return query;
                 })
-                .Execute(_earthDB);
+                .ExecuteAsync(_earthDB);
         }
 
         return new PlayerDisconnectedResponse();
@@ -657,7 +659,7 @@ public sealed class BuildplateInstanceRequestHandler
         long EndTime,
         Catalog.ItemsCatalogR.Item.BoostInfoR.Effect Effect
     );
-    private InitialPlayerStateResponse? HandleGetInitialPlayerState(string instanceId, string playerId, long currentTime)
+    private async Task<InitialPlayerStateResponse?> HandleGetInitialPlayerState(string instanceId, string playerId, long currentTime)
     {
         BuildplateInstancesManager.InstanceInfo? instanceInfo = _buildplateInstancesManager.GetInstanceInfo(instanceId);
 
@@ -687,10 +689,10 @@ public sealed class BuildplateInstanceRequestHandler
                 throw new UnreachableException();
             }
 
-            EarthDB.Results results = new EarthDB.Query(false)
+            EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("profile", playerId, typeof(Profile))
                 .Get("boosts", playerId, typeof(Boosts))
-                .Execute(_earthDB);
+                .ExecuteAsync(_earthDB);
             Profile profile = (Profile)results.Get("profile").Value;
             Boosts boosts = (Boosts)results.Get("boosts").Value;
 
@@ -721,12 +723,12 @@ public sealed class BuildplateInstanceRequestHandler
         }
     }
 
-    private InventoryResponse? HandleGetInventory(string instanceId, string requestedInventoryPlayerId)
+    private async Task<InventoryResponse?> HandleGetInventory(string instanceId, string requestedInventoryPlayerId)
     {
-        EarthDB.Results results = new EarthDB.Query(false)
+        EarthDB.Results results = await new EarthDB.Query(false)
             .Get("inventory", requestedInventoryPlayerId, typeof(Inventory))
             .Get("hotbar", requestedInventoryPlayerId, typeof(Hotbar))
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
         Inventory inventory = (Inventory)results.Get("inventory").Value;
         Hotbar hotbar = (Hotbar)results.Get("hotbar").Value;
 
@@ -742,7 +744,7 @@ public sealed class BuildplateInstanceRequestHandler
         );
     }
 
-    private bool HandleInventoryAdd(string instanceId, InventoryAddItemMessage inventoryAddItemMessage, long timestamp)
+    private async Task<bool> HandleInventoryAdd(string instanceId, InventoryAddItemMessage inventoryAddItemMessage, long timestamp)
     {
         Catalog.ItemsCatalogR.Item? catalogItem = _catalog.ItemsCatalog.GetItem(inventoryAddItemMessage.ItemId);
         if (catalogItem is null)
@@ -750,7 +752,7 @@ public sealed class BuildplateInstanceRequestHandler
         if (!catalogItem.Stackable && inventoryAddItemMessage.InstanceId is null)
             return false;
 
-        EarthDB.Results results = new EarthDB.Query(true)
+        EarthDB.Results results = await new EarthDB.Query(true)
             .Get("inventory", inventoryAddItemMessage.PlayerId, typeof(Inventory))
             .Get("journal", inventoryAddItemMessage.PlayerId, typeof(Journal))
             .Then(results1 =>
@@ -787,14 +789,14 @@ public sealed class BuildplateInstanceRequestHandler
 
                 return query;
             })
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
 
         return true;
     }
 
-    private object HandleInventoryRemove(string instanceId, InventoryRemoveItemRequest inventoryRemoveItemRequest)
+    private async Task<object> HandleInventoryRemove(string instanceId, InventoryRemoveItemRequest inventoryRemoveItemRequest)
     {
-        EarthDB.Results results = new EarthDB.Query(true)
+        EarthDB.Results results = await new EarthDB.Query(true)
             .Get("inventory", inventoryRemoveItemRequest.PlayerId, typeof(Inventory))
             .Get("hotbar", inventoryRemoveItemRequest.PlayerId, typeof(Hotbar))
             .Then(results1 =>
@@ -841,14 +843,14 @@ public sealed class BuildplateInstanceRequestHandler
                     .Update("hotbar", inventoryRemoveItemRequest.PlayerId, hotbar)
                     .Extra("result", result);
             })
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
 
         return results.GetExtra("result");
     }
 
-    private bool HandleInventoryUpdateWear(string instanceId, InventoryUpdateItemWearMessage inventoryUpdateItemWearMessage)
+    private async Task<bool> HandleInventoryUpdateWear(string instanceId, InventoryUpdateItemWearMessage inventoryUpdateItemWearMessage)
     {
-        EarthDB.Results results = new EarthDB.Query(true)
+        EarthDB.Results results = await new EarthDB.Query(true)
             .Get("inventory", inventoryUpdateItemWearMessage.PlayerId, typeof(Inventory))
             .Then(results1 =>
             {
@@ -871,13 +873,13 @@ public sealed class BuildplateInstanceRequestHandler
                 return new EarthDB.Query(true)
                     .Update("inventory", inventoryUpdateItemWearMessage.PlayerId, inventory);
             })
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
         return true;
     }
 
-    private bool HandleInventorySetHotbar(string instanceId, InventorySetHotbarMessage inventorySetHotbarMessage)
+    private async Task<bool> HandleInventorySetHotbar(string instanceId, InventorySetHotbarMessage inventorySetHotbarMessage)
     {
-        EarthDB.Results results = new EarthDB.Query(true)
+        EarthDB.Results results = await new EarthDB.Query(true)
             .Get("inventory", inventorySetHotbarMessage.PlayerId, typeof(Inventory))
             .Then(results1 =>
             {
@@ -895,7 +897,7 @@ public sealed class BuildplateInstanceRequestHandler
                 return new EarthDB.Query(true)
                     .Update("hotbar", inventorySetHotbarMessage.PlayerId, hotbar);
             })
-            .Execute(_earthDB);
+            .ExecuteAsync(_earthDB);
 
         return true;
     }

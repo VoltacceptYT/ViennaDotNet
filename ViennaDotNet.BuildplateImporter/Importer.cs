@@ -1,0 +1,442 @@
+﻿using Serilog;
+using System.IO.Compression;
+using System.Text;
+using System.Text.Json;
+using ViennaDotNet.BuildplateImporter.Models;
+using ViennaDotNet.Common;
+using ViennaDotNet.Common.Utils;
+using ViennaDotNet.DB;
+using ViennaDotNet.DB.Models.Global;
+using ViennaDotNet.DB.Models.Player;
+using ViennaDotNet.EventBus.Client;
+using ViennaDotNet.ObjectStore.Client;
+
+namespace ViennaDotNet.BuildplateImporter;
+
+public sealed class Importer
+{
+    private readonly EarthDB _earthDB;
+    private readonly EventBusClient? _eventBusClient;
+    private readonly ObjectStoreClient _objectStoreClient;
+    private readonly ILogger _logger;
+
+    public Importer(EarthDB earthDB, EventBusClient? eventBusClient, ObjectStoreClient objectStoreClient, ILogger logger)
+    {
+        _earthDB = earthDB;
+        _eventBusClient = eventBusClient;
+        _objectStoreClient = objectStoreClient;
+        _logger = logger;
+    }
+
+    public async Task<bool> ImportTemplateAsync(string templateId, Stream stream, CancellationToken cancellationToken = default)
+    {
+        var worldData = await ReadWorldFile(stream, cancellationToken);
+
+        if (worldData is null)
+        {
+            return false;
+        }
+
+        byte[] preview = await GeneratePreview(worldData);
+
+        return await StoreTemplate(templateId, preview, worldData, cancellationToken);
+    }
+
+    public async Task<string?> AddBuidplateToPlayer(string templateId, string playerId, CancellationToken cancellationToken = default)
+    {
+        TemplateBuildplate? template;
+        try
+        {
+            var results = await new EarthDB.ObjectQuery(false)
+               .GetBuildplate(templateId)
+               .ExecuteAsync(_earthDB, cancellationToken);
+
+            template = results.GetBuildplate(templateId);
+        }
+        catch (EarthDB.DatabaseException ex)
+        {
+            _logger.Error($"Failed to get template buildplate: {ex}");
+            return null;
+        }
+
+        if (template is null)
+        {
+            _logger.Error($"Template buildplate {templateId} not found");
+            return null;
+        }
+
+        byte[]? preview = (await _objectStoreClient.Get(template.PreviewObjectId).Task) as byte[];
+
+        if (preview is null)
+        {
+            _logger.Error($"Could not get preview for template buildplate {templateId}");
+            return null;
+        }
+
+        byte[]? serverData = (await _objectStoreClient.Get(template.ServerDataObjectId).Task) as byte[];
+
+        if (serverData is null)
+        {
+            _logger.Error($"Could not get server data for template buildplate {templateId}");
+            return null;
+        }
+
+        string buidplateId = U.RandomUuid().ToString();
+
+        if (!await StoreBuildplate(templateId, playerId, buidplateId, template, serverData, preview, cancellationToken))
+        {
+            return null;
+        }
+
+        return buidplateId;
+    }
+
+    private async Task<WorldData?> ReadWorldFile(Stream stream, CancellationToken cancellationToken)
+    {
+        Dictionary<string, byte[]> worldFileContents = [];
+
+        try
+        {
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Read, true))
+            {
+                foreach (var entry in zip.Entries)
+                {
+                    if (entry.IsDirectory())
+                    {
+                        continue;
+                    }
+
+                    var entryPath = entry.FullName.AsSpan().Trim(['/', '\\']);
+
+                    if (entryPath is not "buildplate_metadata.json")
+                    {
+                        // must be allocated here because of await
+#pragma warning disable CA2014 // Do not use stackalloc in loops
+                        Span<Range> parts = stackalloc Range[3];
+#pragma warning restore CA2014 // Do not use stackalloc in loops
+                        int partCount = entryPath.SplitAny(parts, ['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+
+                        if (partCount != 2)
+                        {
+                            continue;
+                        }
+
+                        if (entryPath[parts[0]] is not ("region" or "entities"))
+                        {
+                            continue;
+                        }
+
+                        if (entryPath[parts[1]] is not ("r.0.0.mca" or "r.0.-1.mca" or "r.-1.0.mca" or "r.-1.-1.mca"))
+                        {
+                            continue;
+                        }
+                    }
+
+                    using (var entryStream = entry.Open())
+                    using (var ms = new MemoryStream())
+                    {
+                        await entryStream.CopyToAsync(ms, cancellationToken);
+
+                        worldFileContents[entry.FullName] = ms.ToArray();
+                    }
+                }
+            }
+        }
+        catch (IOException ex)
+        {
+            _logger.Error($"Could not read world file: {ex}");
+            return null;
+        }
+
+        byte[] serverData;
+        try
+        {
+            using (var zipStream = new MemoryStream())
+            {
+                using (var zip = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+                {
+                    foreach (string dirName in (IEnumerable<string>)["region", "entities"])
+                    {
+                        foreach (string fileName in (IEnumerable<string>)["r.0.0.mca", "r.0.-1.mca", "r.-1.0.mca", "r.-1.-1.mca"])
+                        {
+                            string filePath = $"{dirName}/{fileName}";
+
+                            if (!worldFileContents.TryGetValue(filePath, out byte[]? data))
+                            {
+                                Log.Error($"World file is missing {filePath}");
+                                return null;
+                            }
+
+                            var entry = zip.CreateEntry(filePath, CompressionLevel.SmallestSize);
+                            using (var entryStream = entry.Open())
+                            {
+                                entryStream.Write(data);
+                            }
+                        }
+                    }
+                }
+
+                serverData = zipStream.ToArray();
+            }
+        }
+        catch (IOException ex)
+        {
+            _logger.Error($"Could not prepare server data: {ex}");
+            return null;
+        }
+
+        int size;
+        int offset;
+        bool night;
+
+        try
+        {
+            byte[]? buildplateMetadataFileData = worldFileContents.GetValueOrDefault("buildplate_metadata.json");
+            string? buildplateMetadataString = buildplateMetadataFileData is not null
+                ? Encoding.UTF8.GetString(buildplateMetadataFileData)
+                : null;
+
+            if (buildplateMetadataString is null)
+            {
+                _logger.Warning("World file does not contain buildplate_metadata.json, using default values");
+                size = 16;
+                offset = 63;
+                night = false;
+            }
+            else
+            {
+                var buildplateMetadataVersion = Json.Deserialize<BuildplateMetadataVersion>(buildplateMetadataString);
+
+                if (buildplateMetadataVersion is null)
+                {
+                    _logger.Error("Invalid buildplate metadata");
+                    return null;
+                }
+
+                switch (buildplateMetadataVersion.Version)
+                {
+                    case 1:
+                        {
+                            var buildplateMetadata = Json.Deserialize<BuildplateMetadataV1>(buildplateMetadataString);
+
+                            if (buildplateMetadata is null)
+                            {
+                                _logger.Error("Invalid buildplate metadata");
+                                return null;
+                            }
+
+                            size = buildplateMetadata.Size;
+                            offset = buildplateMetadata.Offset;
+                            night = buildplateMetadata.Night;
+                        }
+
+                        break;
+                    default:
+                        {
+                            _logger.Error($"Unsupported buildplate metadata version {buildplateMetadataVersion.Version}");
+                            return null;
+                        }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Could not read buildplate metadata file: {ex}");
+            return null;
+        }
+
+        if (size != 8 && size != 16 && size != 32)
+        {
+            _logger.Error($"Invalid buildplate size {size}, must be on of: 8, 16, 32");
+            return null;
+        }
+
+        return new WorldData(serverData, size, offset, night);
+    }
+
+    private async Task<byte[]> GeneratePreview(WorldData worldData)
+    {
+        string? preview;
+        if (_eventBusClient is not null)
+        {
+            _logger.Information("Generating preview");
+            RequestSender requestSender = _eventBusClient.AddRequestSender();
+            preview = await requestSender.Request("buildplates", "preview", JsonSerializer.Serialize(new PreviewRequest(Convert.ToBase64String(worldData.ServerData), worldData.Night))).Task;
+            requestSender.Close();
+
+            if (preview is null)
+            {
+                _logger.Warning("Could not get preview for buildplate (preview generator did not respond to event bus request)");
+            }
+        }
+        else
+        {
+            _logger.Information("Preview was not generated because event bus is not connected");
+            preview = null;
+        }
+
+        return preview is not null ? Encoding.ASCII.GetBytes(preview) : [];
+    }
+
+    private async Task<bool> StoreTemplate(string templateId, byte[] preview, WorldData worldData, CancellationToken cancellationToken)
+    {
+        TemplateBuildplate? template;
+        try
+        {
+            var results = await new EarthDB.ObjectQuery(false)
+               .GetBuildplate(templateId)
+               .ExecuteAsync(_earthDB, cancellationToken);
+
+            template = results.GetBuildplate(templateId);
+        }
+        catch (EarthDB.DatabaseException ex)
+        {
+            _logger.Error($"Failed to get template buildplate: {ex}");
+            return false;
+        }
+
+        if (template is not null)
+        {
+            _logger.Error("Template buidplate already exists");
+            return false;
+            /*_logger.Information("Template buildplate found, updating");
+
+            _logger.Information("Storing template world");
+            string? serverDataObjectId = (string?)await objectStoreClient.Store(worldData.ServerData).Task;
+            if (serverDataObjectId is null)
+            {
+                _logger.Error("Could not store template data object in object store");
+                return false;
+            }
+
+            _logger.Information("Storing template preview");
+            string? previewObjectId = (string?)await objectStoreClient.Store(preview).Task;
+            if (previewObjectId is null)
+            {
+                _logger.Error("Could not store template preview object in object store");
+                return false;
+            }
+
+            _logger.Information("Updating template object ids");
+            string oldDataObjectId = template.ServerDataObjectId;
+            string oldPreviewObjectId = template.PreviewObjectId;
+
+            template = template with
+            {
+                ServerDataObjectId = serverDataObjectId,
+                PreviewObjectId = previewObjectId
+            };
+
+            try
+            {
+                var results = await new EarthDB.ObjectQuery(true)
+                   .UpdateBuildplate(templateId, template)
+                   .ExecuteAsync(earthDB, cancellationToken);
+            }
+            catch (EarthDB.DatabaseException ex)
+            {
+                _logger.Error($"Failed to update template buildplate: {ex}");
+                return false;
+            }
+
+            _logger.Information("Deleting old template objects");
+            await objectStoreClient.Delete(oldDataObjectId).Task;
+            await objectStoreClient.Delete(oldPreviewObjectId).Task;*/
+        }
+        else
+        {
+
+            _logger.Information("Template buildplate not found");
+
+            _logger.Information("Storing template world");
+            string? serverDataObjectId = (string?)await _objectStoreClient.Store(worldData.ServerData).Task;
+            if (serverDataObjectId is null)
+            {
+                _logger.Error("Could not store template data object in object store");
+                return false;
+            }
+
+            _logger.Information("Storing template preview");
+            string? previewObjectId = (string?)await _objectStoreClient.Store(preview).Task;
+            if (previewObjectId is null)
+            {
+                _logger.Error("Could not store template preview object in object store");
+                return false;
+            }
+
+            int scale = worldData.Size switch
+            {
+                8 => 14,
+                16 => 33,
+                32 => 64,
+                _ => 33,
+            };
+
+            template = new TemplateBuildplate(worldData.Size, worldData.Offset, scale, worldData.Night, serverDataObjectId, previewObjectId);
+
+            try
+            {
+                var results = await new EarthDB.ObjectQuery(true)
+                   .UpdateBuildplate(templateId, template)
+                   .ExecuteAsync(_earthDB, cancellationToken);
+            }
+            catch (EarthDB.DatabaseException ex)
+            {
+                _logger.Error($"Failed to store template buidplate in database: {ex}");
+                await _objectStoreClient.Delete(serverDataObjectId).Task;
+                await _objectStoreClient.Delete(previewObjectId).Task;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private async Task<bool> StoreBuildplate(string templateId, string playerId, string buildplateId, TemplateBuildplate template, byte[] serverData, byte[] preview, CancellationToken cancellationToken)
+    {
+        _logger.Information("Storing world");
+        string? serverDataObjectId = (string?)await _objectStoreClient.Store(serverData).Task;
+        if (serverDataObjectId is null)
+        {
+            _logger.Error("Could not store data object in object store");
+            return false;
+        }
+
+        _logger.Information("Storing preview");
+        string? previewObjectId = (string?)await _objectStoreClient.Store(preview).Task;
+        if (previewObjectId is null)
+        {
+            _logger.Error("Could not store preview object in object store");
+            return false;
+        }
+
+        try
+        {
+            EarthDB.Results results = await new EarthDB.Query(true)
+                .Get("buildplates", playerId, typeof(Buildplates))
+                .Then(results1 =>
+                {
+                    Buildplates buildplates = (Buildplates)results1.Get("buildplates").Value;
+
+                    long lastModified = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                    Buildplates.Buildplate buildplate = new Buildplates.Buildplate(templateId, template.Size, template.Offset, template.Scale, template.Night, lastModified, serverDataObjectId, previewObjectId);
+
+                    buildplates.AddBuildplate(buildplateId, buildplate);
+
+                    return new EarthDB.Query(true)
+                        .Update("buildplates", playerId, buildplates);
+                })
+                .ExecuteAsync(_earthDB, cancellationToken);
+
+            return true;
+        }
+        catch (EarthDB.DatabaseException ex)
+        {
+            _logger.Error($"Failed to store buildplate in database: {ex}");
+            await _objectStoreClient.Delete(serverDataObjectId).Task;
+            await _objectStoreClient.Delete(previewObjectId).Task;
+            return false;
+        }
+    }
+}

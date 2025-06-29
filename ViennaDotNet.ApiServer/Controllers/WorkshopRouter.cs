@@ -55,16 +55,16 @@ public class WorkshopRouter : ControllerBase
         // request.timestamp
         long requestStartedOn = HttpContext.GetTimestamp();
 
-        EarthDB.Results.GenericResult<CraftingSlots> craftingSlotsResult;
-        EarthDB.Results.GenericResult<SmeltingSlots> smeltingSlotsResult;
+        EarthDB.Results.Result<CraftingSlots> craftingSlotsResult;
+        EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult;
         try
         {
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("crafting", playerId, typeof(CraftingSlots))
                 .Get("smelting", playerId, typeof(SmeltingSlots))
                 .ExecuteAsync(earthDB, cancellationToken);
-            craftingSlotsResult = results.GetGeneric<CraftingSlots>("crafting");
-            smeltingSlotsResult = results.GetGeneric<SmeltingSlots>("smelting");
+            craftingSlotsResult = results.Get<CraftingSlots>("crafting");
+            smeltingSlotsResult = results.Get<SmeltingSlots>("smelting");
         }
         catch (EarthDB.DatabaseException ex)
         {
@@ -75,15 +75,15 @@ public class WorkshopRouter : ControllerBase
         {
             ["crafting"] = new Dictionary<string, object>()
             {
-                ["1"] = CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.GValue.Slots[0], requestStartedOn, craftingSlotsResult.version, 1),
-                ["2"] = CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.GValue.Slots[1], requestStartedOn, craftingSlotsResult.version, 2),
-                ["3"] = CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.GValue.Slots[2], requestStartedOn, craftingSlotsResult.version, 3),
+                ["1"] = CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.Value.Slots[0], requestStartedOn, craftingSlotsResult.Version, 1),
+                ["2"] = CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.Value.Slots[1], requestStartedOn, craftingSlotsResult.Version, 2),
+                ["3"] = CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.Value.Slots[2], requestStartedOn, craftingSlotsResult.Version, 3),
             },
             ["smelting"] = new Dictionary<string, object>()
             {
-                ["1"] = SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.GValue.Slots[0], requestStartedOn, smeltingSlotsResult.version, 1),
-                ["2"] = SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.GValue.Slots[1], requestStartedOn, smeltingSlotsResult.version, 2),
-                ["3"] = SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.GValue.Slots[2], requestStartedOn, smeltingSlotsResult.version, 3),
+                ["1"] = SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.Value.Slots[0], requestStartedOn, smeltingSlotsResult.Version, 1),
+                ["2"] = SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.Value.Slots[1], requestStartedOn, smeltingSlotsResult.Version, 2),
+                ["3"] = SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.Value.Slots[2], requestStartedOn, smeltingSlotsResult.Version, 3),
             },
         };
 
@@ -106,9 +106,9 @@ public class WorkshopRouter : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("crafting", playerId, typeof(CraftingSlots))
                 .ExecuteAsync(earthDB, cancellationToken);
-            EarthDB.Results.GenericResult<CraftingSlots> craftingSlotsResult = results.GetGeneric<CraftingSlots>("crafting");
+            EarthDB.Results.Result<CraftingSlots> craftingSlotsResult = results.Get<CraftingSlots>("crafting");
 
-            string resp = Json.Serialize(new EarthApiResponse(CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.GValue.Slots[slotIndex - 1], requestStartedOn, craftingSlotsResult.version, slotIndex)));
+            string resp = Json.Serialize(new EarthApiResponse(CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, craftingSlotsResult.Version, slotIndex)));
             return Content(resp, "application/json");
         }
         catch (EarthDB.DatabaseException ex)
@@ -132,9 +132,9 @@ public class WorkshopRouter : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("smelting", playerId, typeof(SmeltingSlots))
                 .ExecuteAsync(earthDB, cancellationToken);
-            EarthDB.Results.GenericResult<SmeltingSlots> smeltingSlotsResult = results.GetGeneric<SmeltingSlots>("smelting");
+            EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult = results.Get<SmeltingSlots>("smelting");
 
-            string resp = Json.Serialize(new EarthApiResponse(SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.GValue.Slots[slotIndex - 1], requestStartedOn, smeltingSlotsResult.version, slotIndex)));
+            string resp = Json.Serialize(new EarthApiResponse(SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, smeltingSlotsResult.Version, slotIndex)));
             return Content(resp, "application/json");
         }
         catch (EarthDB.DatabaseException ex)
@@ -664,9 +664,9 @@ public class WorkshopRouter : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            EarthDB.Results.GenericResult<CraftingSlots> craftingSlotsResult = results.GetGeneric<CraftingSlots>("crafting");
+            EarthDB.Results.Result<CraftingSlots> craftingSlotsResult = results.Get<CraftingSlots>("crafting");
 
-            string resp = Json.Serialize(new EarthApiResponse(CraftingSlotModelToResponse(craftingSlotsResult.GValue.Slots[slotIndex - 1], requestStartedOn, craftingSlotsResult.version), new EarthApiResponse.UpdatesResponse(results)));
+            string resp = Json.Serialize(new EarthApiResponse(CraftingSlotModelToResponse(craftingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, craftingSlotsResult.Version), new EarthApiResponse.UpdatesResponse(results)));
             return Content(resp, "application/json");
         }
         catch (EarthDB.DatabaseException ex)
@@ -744,9 +744,9 @@ public class WorkshopRouter : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            EarthDB.Results.GenericResult<SmeltingSlots> smeltingSlotsResult = results.GetGeneric<SmeltingSlots>("smelting");
+            EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult = results.Get<SmeltingSlots>("smelting");
 
-            string resp = Json.Serialize(new EarthApiResponse(SmeltingSlotModelToResponse(smeltingSlotsResult.GValue.Slots[slotIndex - 1], requestStartedOn, smeltingSlotsResult.version), new EarthApiResponse.UpdatesResponse(results)));
+            string resp = Json.Serialize(new EarthApiResponse(SmeltingSlotModelToResponse(smeltingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, smeltingSlotsResult.Version), new EarthApiResponse.UpdatesResponse(results)));
             return Content(resp, "application/json");
         }
         catch (EarthDB.DatabaseException ex)

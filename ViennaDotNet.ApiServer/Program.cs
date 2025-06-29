@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using Uma.Uuid;
 using ViennaDotNet.ApiServer.Utils;
+using ViennaDotNet.BuildplateImporter;
 using ViennaDotNet.Common.Utils;
 using ViennaDotNet.DB;
 using ViennaDotNet.EventBus.Client;
@@ -47,7 +48,7 @@ public static class Program
     }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-    public static int Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         TypeDescriptor.AddAttributes(typeof(Uuid), new TypeConverterAttribute(typeof(StringToUuidConv)));
 
@@ -153,6 +154,52 @@ public static class Program
         }
 
         Log.Information("Loaded static data");
+
+        Log.Information("Importing shop buidplates");
+
+        EarthDB.ObjectResults? currentShopBuildplates = null;
+        try
+        {
+            currentShopBuildplates = await new EarthDB.ObjectQuery(false)
+                .GetBuildplates(staticData.Buildplates.ShopBuildplates.Select(buildplate => buildplate.Id))
+                .ExecuteAsync(DB);
+        }
+        catch (EarthDB.DatabaseException ex)
+        {
+            Log.Error($"Failed to get current shop buildplates: {ex}");
+        }
+
+        if (currentShopBuildplates is not null)
+        {
+            Importer importer = new Importer(DB, eventBus, objectStore, Log.Logger);
+
+            foreach (var buidplate in staticData.Buildplates.ShopBuildplates)
+            {
+                if (currentShopBuildplates.GetBuildplate(buidplate.Id) is not null)
+                {
+                    Log.Debug($"Shop buildplate {buidplate.Id} already exists");
+                    continue;
+                }
+
+                try
+                {
+                    Log.Information($"Importing shop buildplate {buidplate.Id}");
+
+                    using (var buidplateData = buidplate.OpenRead())
+                    {
+                        await importer.ImportTemplateAsync(buidplate.Id, buidplateData);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Fatal($"Failed to import shop buidplate {buidplate.Id}: {ex}");
+                    Log.CloseAndFlush();
+                    return 1;
+                }
+            }
+        }
+
+        Log.Information("Imported shop buidplates");
 
         tappablesManager = new TappablesManager(eventBus);
         buildplateInstancesManager = new BuildplateInstancesManager(eventBus);

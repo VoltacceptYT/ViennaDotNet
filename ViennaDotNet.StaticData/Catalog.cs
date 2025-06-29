@@ -3,10 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using ViennaDotNet.Common;
-using static ViennaDotNet.StaticData.Catalog.ItemJournalGroupsCatalogR;
-using static ViennaDotNet.StaticData.Catalog.ShopCatalogR.StoreItemInfo;
 
 namespace ViennaDotNet.StaticData;
 
@@ -532,8 +529,9 @@ public sealed class Catalog
 
         public sealed record StoreItemInfo(
             Guid Id,
-            StoreItemType ItemType,
-            IReadOnlyDictionary<Guid, int>? ItemCounts
+            StoreItemInfo.StoreItemType ItemType,
+            IReadOnlyDictionary<Guid, int>? ItemCounts,
+            Guid? FeaturedItem
         )
         {
             [JsonConverter(typeof(JsonStringEnumConverter))]
