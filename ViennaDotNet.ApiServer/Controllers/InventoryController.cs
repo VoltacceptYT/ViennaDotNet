@@ -43,9 +43,9 @@ public class InventoryController : ControllerBase
                 .Get("journal", playerId, typeof(Journal))
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            inventoryModel = (DB.Models.Player.Inventory)results.Get("inventory").Value;
-            hotbarModel = (Hotbar)results.Get("hotbar").Value;
-            journalModel = (Journal)results.Get("journal").Value;
+            inventoryModel = results.Get<DB.Models.Player.Inventory>("inventory");
+            hotbarModel = results.Get<Hotbar>("hotbar");
+            journalModel = results.Get<Journal>("journal");
         }
         catch (EarthDB.DatabaseException ex)
         {
@@ -139,7 +139,7 @@ public class InventoryController : ControllerBase
                         hotbar.Items[index] = item is not null ? new Hotbar.Item(item.Id, item.Count, item.InstanceId) : null;
                     }
 
-                    hotbar.LimitToInventory((DB.Models.Player.Inventory)results1.Get("inventory").Value);
+                    hotbar.LimitToInventory(results1.Get<DB.Models.Player.Inventory>("inventory"));
                     return new EarthDB.Query(true)
                         .Update("hotbar", playerId, hotbar)
                         .Get("inventory", playerId, typeof(DB.Models.Player.Inventory))
@@ -147,8 +147,8 @@ public class InventoryController : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            inventoryModel = (DB.Models.Player.Inventory)results.Get("inventory").Value;
-            hotbarModel = (Hotbar)results.Get("hotbar").Value;
+            inventoryModel = results.Get<DB.Models.Player.Inventory>("inventory");
+            hotbarModel = results.Get<Hotbar>("hotbar");
         }
         catch (EarthDB.DatabaseException ex)
         {
@@ -194,10 +194,10 @@ public class InventoryController : ControllerBase
                 .Get("boosts", playerId, typeof(Boosts))
                 .Then(results1 =>
                 {
-                    DB.Models.Player.Inventory inventory = (DB.Models.Player.Inventory)results1.Get("inventory").Value;
-                    Journal journal = (Journal)results1.Get("journal").Value;
-                    Profile profile = (Profile)results1.Get("profile").Value;
-                    Boosts boosts = (Boosts)results1.Get("boosts").Value;
+                    DB.Models.Player.Inventory inventory = results1.Get<DB.Models.Player.Inventory>("inventory");
+                    Journal journal = results1.Get<Journal>("journal");
+                    Profile profile = results1.Get<Profile>("profile");
+                    Boosts boosts = results1.Get<Boosts>("boosts");
 
                     EarthDB.Query query = new EarthDB.Query(true);
 

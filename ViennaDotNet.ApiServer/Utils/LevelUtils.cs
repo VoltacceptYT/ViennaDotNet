@@ -13,7 +13,7 @@ public sealed class LevelUtils
         getQuery.Get("profile", playerId, typeof(Profile));
         getQuery.Then(results =>
         {
-            Profile profile = (Profile)results.Get("profile").Value;
+            Profile profile = results.Get<Profile>("profile");
             EarthDB.Query updateQuery = new EarthDB.Query(true);
             bool changed = false;
             while (profile.Level - 1 < staticData.Levels.Levels.Length && profile.Experience >= staticData.Levels.Levels[profile.Level - 1].ExperienceRequired)

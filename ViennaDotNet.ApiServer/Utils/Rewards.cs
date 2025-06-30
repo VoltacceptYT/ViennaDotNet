@@ -88,7 +88,7 @@ public sealed class Rewards
             bool checkLevelUp = false;
             if (_rubies > 0 || _experiencePoints > 0)
             {
-                Profile profile = (Profile)results.Get("profile").Value;
+                Profile profile = results.Get<Profile>("profile");
                 if (_rubies > 0)
                 {
                     profile.Rubies.Earned += _rubies;
@@ -109,8 +109,8 @@ public sealed class Rewards
 
             if (!_items.IsEmpty())
             {
-                Inventory inventory = (Inventory)results.Get("inventory").Value;
-                Journal journal = (Journal)results.Get("journal").Value;
+                Inventory inventory = results.Get<Inventory>("inventory");
+                Journal journal = results.Get<Journal>("journal");
                 foreach (var entry in _items)
                 {
                     string id = entry.Key;

@@ -28,10 +28,10 @@ public class TokensController : ControllerBase
         if (string.IsNullOrEmpty(playerId))
             return BadRequest();
 
-        Tokens tokens = (Tokens)(await new EarthDB.Query(false)
+        Tokens tokens = (await new EarthDB.Query(false)
             .Get("tokens", playerId, typeof(Tokens))
             .ExecuteAsync(earthDB, cancellationToken))
-            .Get("tokens").Value;
+            .Get<Tokens>("tokens");
 
         string resp = Json.Serialize(new EarthApiResponse(new Dictionary<string, Dictionary<string, Token>>()
         {
@@ -63,7 +63,7 @@ public class TokensController : ControllerBase
                 .Get("tokens", playerId, typeof(Tokens))
                 .Then(results1 =>
                 {
-                    Tokens tokens = (Tokens)results1.Get("tokens").Value;
+                    Tokens tokens = results1.Get<Tokens>("tokens");
                     Tokens.Token? removedToken = tokens.RemoveToken(tokenId);
                     if (removedToken is not null)
                     {

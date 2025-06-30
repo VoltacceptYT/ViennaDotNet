@@ -416,7 +416,7 @@ public sealed class Importer
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .Then(results1 =>
                 {
-                    Buildplates buildplates = (Buildplates)results1.Get("buildplates").Value;
+                    Buildplates buildplates = results1.Get<Buildplates>("buildplates");
 
                     long lastModified = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 

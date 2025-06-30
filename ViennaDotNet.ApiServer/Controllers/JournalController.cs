@@ -34,8 +34,8 @@ public class JournalController : ControllerBase
                 .Get("activityLog", playerId, typeof(ActivityLog))
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            journalModel = (Journal)results.Get("journal").Value;
-            activityLogModel = (ActivityLog)results.Get("activityLog").Value;
+            journalModel = results.Get<Journal>("journal");
+            activityLogModel = results.Get<ActivityLog>("activityLog");
         }
         catch (EarthDB.DatabaseException exception)
         {

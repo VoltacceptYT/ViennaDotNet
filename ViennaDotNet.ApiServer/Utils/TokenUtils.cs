@@ -12,7 +12,7 @@ public static class TokenUtils
         getQuery.Get("tokens", playerId, typeof(Tokens));
         getQuery.Then(results =>
         {
-            Tokens tokens = (Tokens)results.Get("tokens").Value;
+            Tokens tokens = results.Get<Tokens>("tokens");
             string id = U.RandomUuid().ToString();
             tokens.AddToken(id, token);
             EarthDB.Query updateQuery = new EarthDB.Query(true);

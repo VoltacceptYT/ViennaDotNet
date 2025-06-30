@@ -34,8 +34,8 @@ public class ProfileController : ControllerBase
             .Get("boosts", userId, typeof(Boosts))
             .ExecuteAsync(earthDB, cancellationToken);
 
-        Profile profile = (Profile)results.Get("profile").Value;
-        Boosts boosts = (Boosts)results.Get("boosts").Value;
+        Profile profile = results.Get<Profile>("profile");
+        Boosts boosts = results.Get<Boosts>("boosts");
 
         var levels = staticData.Levels.Levels;
         int currentLevelExperience = profile.Experience - (profile.Level > 1 ? (profile.Level - 2 < levels.Length ? levels[profile.Level - 2].ExperienceRequired : levels[^1].ExperienceRequired) : 0);
@@ -75,10 +75,10 @@ public class ProfileController : ControllerBase
 
         try
         {
-            Profile profile = (Profile)(await new EarthDB.Query(false)
+            Profile profile = (await new EarthDB.Query(false)
                 .Get("profile", playerId, typeof(Profile))
                 .ExecuteAsync(earthDB, cancellationToken))
-                .Get("profile").Value;
+                .Get<Profile>("profile");
 
             string resp = Json.Serialize(new EarthApiResponse(profile.Rubies.Purchased + profile.Rubies.Earned));
             return Content(resp, "application/json");
@@ -100,10 +100,10 @@ public class ProfileController : ControllerBase
 
         try
         {
-            Profile profile = (Profile)(await new EarthDB.Query(false)
+            Profile profile = (await new EarthDB.Query(false)
                 .Get("profile", playerId, typeof(Profile))
                 .ExecuteAsync(earthDB, cancellationToken))
-                .Get("profile").Value;
+                .Get<Profile>("profile");
 
             string resp = Json.Serialize(new EarthApiResponse(new Types.Profile.SplitRubies(profile.Rubies.Purchased, profile.Rubies.Earned)));
             return Content(resp, "application/json");

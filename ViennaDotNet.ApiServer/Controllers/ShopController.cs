@@ -182,9 +182,9 @@ public class ShopController : ViennaControllerBase
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .Then(async results =>
                 {
-                    var profile = results.Get<Profile>("profile").Value;
-                    var inventory = results.Get<Inventory>("inventory").Value;
-                    var buildplates = results.Get<Buildplates>("buildplates").Value;
+                    var profile = results.Get<Profile>("profile");
+                    var inventory = results.Get<Inventory>("inventory");
+                    var buildplates = results.Get<Buildplates>("buildplates");
 
                     if (profile.Rubies.Total < expectedPurchasePrice)
                     {

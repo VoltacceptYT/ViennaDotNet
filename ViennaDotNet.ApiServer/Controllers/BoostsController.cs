@@ -49,8 +49,8 @@ public class BoostsController : ControllerBase
                 {
                     // I know this is ugly, we're making changes to the database in response to a GET request, but if we don't then the client won't correctly update the player health bar in the UI
 
-                    Boosts boosts = (Boosts)results1.Get("boosts").Value;
-                    Profile profile = (Profile)results1.Get("profile").Value;
+                    Boosts boosts = results1.Get<Boosts>("boosts");
+                    Profile profile = results1.Get<Profile>("profile");
 
                     return PruneBoostsAndUpdateProfile(boosts, profile, requestStartedOn, catalog.ItemsCatalog)
                         ? new EarthDB.Query(true)
@@ -193,9 +193,9 @@ public class BoostsController : ControllerBase
                 .Get("profile", playerId, typeof(Profile))
                 .Then(results1 =>
                 {
-                    Inventory inventory = (Inventory)results1.Get("inventory").Value;
-                    Boosts boosts = (Boosts)results1.Get("boosts").Value;
-                    Profile profile = (Profile)results1.Get("profile").Value;
+                    Inventory inventory = results1.Get<Inventory>("inventory");
+                    Boosts boosts = results1.Get<Boosts>("boosts");
+                    Profile profile = results1.Get<Profile>("profile");
                     bool profileChanged = false;
 
                     if (PruneBoostsAndUpdateProfile(boosts, profile, requestStartedOn, catalog.ItemsCatalog))
@@ -296,8 +296,8 @@ public class BoostsController : ControllerBase
                 .Get("profile", playerId, typeof(Profile))
                 .Then(results1 =>
                 {
-                    Boosts boosts = (Boosts)results1.Get("boosts").Value;
-                    Profile profile = (Profile)results1.Get("profile").Value;
+                    Boosts boosts = results1.Get<Boosts>("boosts");
+                    Profile profile = results1.Get<Profile>("profile");
                     bool profileChanged = false;
 
                     if (PruneBoostsAndUpdateProfile(boosts, profile, requestStartedOn, catalog.ItemsCatalog))

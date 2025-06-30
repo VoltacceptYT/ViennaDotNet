@@ -42,7 +42,7 @@ public class TappablesController : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("redeemedTappables", playerId, typeof(RedeemedTappables))
                 .ExecuteAsync(earthDB, cancellationToken);
-            RedeemedTappables redeemedTappables = (RedeemedTappables)results.Get("redeemedTappables").Value;
+            RedeemedTappables redeemedTappables = results.Get<RedeemedTappables>("redeemedTappables");
 
             IEnumerable<ActiveLocation> activeLocationTappables = tappables
                 .Where(tappable => tappable.SpawnTime + tappable.ValidFor > requestStartedOn && !redeemedTappables.IsRedeemed(tappable.Id))
@@ -125,9 +125,9 @@ public class TappablesController : ControllerBase
                 .Then(results1 =>
                 {
                     EarthDB.Query query = new EarthDB.Query(true);
-                    Boosts boosts = (Boosts)results1.Get("boosts").Value;
+                    Boosts boosts = results1.Get<Boosts>("boosts");
 
-                    RedeemedTappables redeemedTappables = (RedeemedTappables)results1.Get("redeemedTappables").Value;
+                    RedeemedTappables redeemedTappables = results1.Get<RedeemedTappables>("redeemedTappables");
 
                     if (redeemedTappables.IsRedeemed(tappable.Id))
                     {

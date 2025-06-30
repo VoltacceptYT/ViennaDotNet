@@ -11,7 +11,7 @@ public static class ActivityLogUtils
         getQuery.Get("activityLog", playerId, typeof(ActivityLog));
         getQuery.Then(results =>
         {
-            ActivityLog activityLog = (ActivityLog)results.Get("activityLog").Value;
+            ActivityLog activityLog = results.Get<ActivityLog>("activityLog");
             activityLog.AddEntry(entry);
             activityLog.Prune();
             EarthDB.Query updateQuery = new EarthDB.Query(true);

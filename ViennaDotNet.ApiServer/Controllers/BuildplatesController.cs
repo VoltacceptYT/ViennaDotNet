@@ -46,7 +46,7 @@ public class BuildplatesController : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .ExecuteAsync(earthDB, cancellationToken);
-            buildplatesModel = (Buildplates)results.Get("buildplates").Value;
+            buildplatesModel = results.Get<Buildplates>("buildplates");
         }
         catch (EarthDB.DatabaseException ex)
         {
@@ -131,9 +131,9 @@ public class BuildplatesController : ControllerBase
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            inventory = (DB.Models.Player.Inventory)results.Get("inventory").Value;
-            hotbar = (Hotbar)results.Get("hotbar").Value;
-            buildplate = ((Buildplates)results.Get("buildplates").Value).GetBuildplate(buildplateId);
+            inventory = results.Get<DB.Models.Player.Inventory>("inventory");
+            hotbar = results.Get<Hotbar>("hotbar");
+            buildplate = results.Get<Buildplates>("buildplates").GetBuildplate(buildplateId);
         }
         catch (EarthDB.DatabaseException exception)
         {
@@ -197,7 +197,7 @@ public class BuildplatesController : ControllerBase
                 .Get("sharedBuildplates", "", typeof(SharedBuildplates))
                 .Then(results1 =>
                 {
-                    SharedBuildplates sharedBuildplates = (SharedBuildplates)results1.Get("sharedBuildplates").Value;
+                    SharedBuildplates sharedBuildplates = results1.Get<SharedBuildplates>("sharedBuildplates");
 
                     sharedBuildplates.AddSharedBuildplate(sharedBuildplateId, sharedBuildplate);
 
@@ -231,7 +231,7 @@ public class BuildplatesController : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                     .Get("sharedBuildplates", "", typeof(SharedBuildplates))
                         .ExecuteAsync(earthDB, cancellationToken);
-            SharedBuildplates sharedBuildplates = (SharedBuildplates)results.Get("sharedBuildplates").Value;
+            SharedBuildplates sharedBuildplates = results.Get<SharedBuildplates>("sharedBuildplates");
             sharedBuildplate = sharedBuildplates.GetSharedBuildplate(sharedBuildplateId);
         }
         catch (EarthDB.DatabaseException exception)
@@ -360,7 +360,7 @@ public class BuildplatesController : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                     .Get("buildplates", playerId, typeof(Buildplates))
                     .ExecuteAsync(earthDB, cancellationToken);
-            buildplate = ((Buildplates)results.Get("buildplates").Value).GetBuildplate(instanceInfo.BuildplateId);
+            buildplate = results.Get<Buildplates>("buildplates").GetBuildplate(instanceInfo.BuildplateId);
         }
         catch (EarthDB.DatabaseException ex)
         {
@@ -415,7 +415,7 @@ public class BuildplatesController : ControllerBase
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            buildplate = ((Buildplates)results.Get("buildplates").Value).GetBuildplate(buildplateId);
+            buildplate = results.Get<Buildplates>("buildplates").GetBuildplate(buildplateId);
         }
         catch (EarthDB.DatabaseException exception)
         {
@@ -458,7 +458,7 @@ public class BuildplatesController : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("sharedBuildplates", "", typeof(SharedBuildplates))
                 .ExecuteAsync(earthDB, cancellationToken);
-            sharedBuildplate = ((SharedBuildplates)results.Get("sharedBuildplates").Value).GetSharedBuildplate(sharedBuildplateId);
+            sharedBuildplate = results.Get<SharedBuildplates>("sharedBuildplates").GetSharedBuildplate(sharedBuildplateId);
         }
         catch (EarthDB.DatabaseException exception)
         {
@@ -558,7 +558,7 @@ public class BuildplatesController : ControllerBase
                         EarthDB.Results results = await new EarthDB.Query(false)
                             .Get("buildplates", instanceInfo.PlayerId, typeof(Buildplates))
                             .ExecuteAsync(earthDB, cancellationToken);
-                        buildplate = ((Buildplates)results.Get("buildplates").Value).GetBuildplate(instanceInfo.BuildplateId);
+                        buildplate = results.Get<Buildplates>("buildplates").GetBuildplate(instanceInfo.BuildplateId);
                     }
                     catch (EarthDB.DatabaseException exception)
                     {
@@ -584,7 +584,7 @@ public class BuildplatesController : ControllerBase
                         EarthDB.Results results = await new EarthDB.Query(false)
                             .Get("sharedBuildplates", "", typeof(SharedBuildplates))
                             .ExecuteAsync(earthDB, cancellationToken);
-                        sharedBuildplate = ((SharedBuildplates)results.Get("sharedBuildplates").Value).GetSharedBuildplate(instanceInfo.BuildplateId);
+                        sharedBuildplate = results.Get<SharedBuildplates>("sharedBuildplates").GetSharedBuildplate(instanceInfo.BuildplateId);
                     }
                     catch (EarthDB.DatabaseException exception)
                     {
@@ -611,7 +611,7 @@ public class BuildplatesController : ControllerBase
                         EarthDB.Results results = await new EarthDB.Query(false)
                             .Get("encounterBuildplates", "", typeof(EncounterBuildplates))
                             .ExecuteAsync(earthDB, cancellationToken);
-                        encounterBuildplate = ((EncounterBuildplates)results.Get("encounterBuildplates").Value).GetEncounterBuildplate(instanceInfo.BuildplateId);
+                        encounterBuildplate = results.Get<EncounterBuildplates>("encounterBuildplates").GetEncounterBuildplate(instanceInfo.BuildplateId);
                     }
                     catch (EarthDB.DatabaseException exception)
                     {

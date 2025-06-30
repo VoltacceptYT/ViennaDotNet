@@ -16,22 +16,22 @@ public sealed class SharedBuildplates
 
     public sealed class SharedBuildplate
     {
-        public string PlayerId { get; }
+        public string PlayerId { get; init; }
 
-        public int Size { get; }
-        public int Offset { get; }
-        public int Scale { get; }
+        public int Size { get; init; }
+        public int Offset { get; init; }
+        public int Scale { get; init; }
 
-        public bool Night { get; }
+        public bool Night { get; init; }
 
-        public long Created { get; }
-        public long BuildplateLastModifed { get; }
+        public long Created { get; init; }
+        public long BuildplateLastModifed { get; init; }
         public long LastViewed { get; set; }
         public int NumberOfTimesViewed { get; set; }
 
-        public HotbarItem?[] Hotbar { get; }
+        public HotbarItem?[] Hotbar { get; init; }
 
-        public string ServerDataObjectId { get; }
+        public string ServerDataObjectId { get; init; }
 
         public SharedBuildplate(string playerId, int size, int offset, int scale, bool night, long created, long buildplateLastModifed, string serverDataObjectId)
         {

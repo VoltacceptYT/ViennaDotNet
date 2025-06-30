@@ -63,8 +63,8 @@ public class WorkshopRouter : ControllerBase
                 .Get("crafting", playerId, typeof(CraftingSlots))
                 .Get("smelting", playerId, typeof(SmeltingSlots))
                 .ExecuteAsync(earthDB, cancellationToken);
-            craftingSlotsResult = results.Get<CraftingSlots>("crafting");
-            smeltingSlotsResult = results.Get<SmeltingSlots>("smelting");
+            craftingSlotsResult = results.GetResult<CraftingSlots>("crafting");
+            smeltingSlotsResult = results.GetResult<SmeltingSlots>("smelting");
         }
         catch (EarthDB.DatabaseException ex)
         {
@@ -106,7 +106,7 @@ public class WorkshopRouter : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("crafting", playerId, typeof(CraftingSlots))
                 .ExecuteAsync(earthDB, cancellationToken);
-            EarthDB.Results.Result<CraftingSlots> craftingSlotsResult = results.Get<CraftingSlots>("crafting");
+            EarthDB.Results.Result<CraftingSlots> craftingSlotsResult = results.GetResult<CraftingSlots>("crafting");
 
             string resp = Json.Serialize(new EarthApiResponse(CraftingSlotModelToResponseIncludingLocked(craftingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, craftingSlotsResult.Version, slotIndex)));
             return Content(resp, "application/json");
@@ -132,7 +132,7 @@ public class WorkshopRouter : ControllerBase
             EarthDB.Results results = await new EarthDB.Query(false)
                 .Get("smelting", playerId, typeof(SmeltingSlots))
                 .ExecuteAsync(earthDB, cancellationToken);
-            EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult = results.Get<SmeltingSlots>("smelting");
+            EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult = results.GetResult<SmeltingSlots>("smelting");
 
             string resp = Json.Serialize(new EarthApiResponse(SmeltingSlotModelToResponseIncludingLocked(smeltingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, smeltingSlotsResult.Version, slotIndex)));
             return Content(resp, "application/json");
@@ -188,10 +188,10 @@ public class WorkshopRouter : ControllerBase
                 {
                     EarthDB.Query query = new EarthDB.Query(true);
 
-                    var craftingSlots = (CraftingSlots)results1.Get("crafting").Value;
+                    var craftingSlots = results1.Get<CraftingSlots>("crafting");
                     CraftingSlot craftingSlot = craftingSlots.Slots[slotIndex - 1];
-                    var inventory = (Inventory)results1.Get("inventory").Value;
-                    var hotbar = (Hotbar)results1.Get("hotbar").Value;
+                    var inventory = results1.Get<Inventory>("inventory");
+                    var hotbar = results1.Get<Hotbar>("hotbar");
 
                     if (craftingSlot.Locked || craftingSlot.ActiveJob is not null)
                     {
@@ -383,10 +383,10 @@ public class WorkshopRouter : ControllerBase
                 {
                     EarthDB.Query query = new EarthDB.Query(true);
 
-                    var smeltingSlots = (SmeltingSlots)results1.Get("smelting").Value;
+                    var smeltingSlots = results1.Get<SmeltingSlots>("smelting");
                     SmeltingSlot smeltingSlot = smeltingSlots.Slots[slotIndex - 1];
-                    var inventory = (Inventory)results1.Get("inventory").Value;
-                    var hotbar = (Hotbar)results1.Get("hotbar").Value;
+                    var inventory = results1.Get<Inventory>("inventory");
+                    var hotbar = results1.Get<Hotbar>("hotbar");
 
                     if (smeltingSlot.Locked || smeltingSlot.ActiveJob is not null)
                     {
@@ -501,7 +501,7 @@ public class WorkshopRouter : ControllerBase
                 .Get("crafting", playerId, typeof(CraftingSlots))
                 .Then(results1 =>
                 {
-                    var craftingSlots = (CraftingSlots)results1.Get("crafting").Value;
+                    var craftingSlots = results1.Get<CraftingSlots>("crafting");
                     CraftingSlot craftingSlot = craftingSlots.Slots[slotIndex - 1];
 
                     var rewards = new Rewards();
@@ -557,7 +557,7 @@ public class WorkshopRouter : ControllerBase
                 .Get("smelting", playerId, typeof(SmeltingSlots))
                 .Then(results1 =>
                 {
-                    var smeltingSlots = (SmeltingSlots)results1.Get("smelting").Value;
+                    var smeltingSlots = results1.Get<SmeltingSlots>("smelting");
                     SmeltingSlot smeltingSlot = smeltingSlots.Slots[slotIndex - 1];
 
                     var rewards = new Rewards();
@@ -627,10 +627,10 @@ public class WorkshopRouter : ControllerBase
                     EarthDB.Query query = new EarthDB.Query(true);
                     query.Get("crafting", playerId, typeof(CraftingSlots));
 
-                    var craftingSlots = (CraftingSlots)results1.Get("crafting").Value;
+                    var craftingSlots = results1.Get<CraftingSlots>("crafting");
                     CraftingSlot craftingSlot = craftingSlots.Slots[slotIndex - 1];
-                    var inventory = (Inventory)results1.Get("inventory").Value;
-                    var journal = (Journal)results1.Get("journal").Value;
+                    var inventory = results1.Get<Inventory>("inventory");
+                    var journal = results1.Get<Journal>("journal");
 
                     if (craftingSlot.ActiveJob is null)
                         return query;
@@ -664,7 +664,7 @@ public class WorkshopRouter : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            EarthDB.Results.Result<CraftingSlots> craftingSlotsResult = results.Get<CraftingSlots>("crafting");
+            EarthDB.Results.Result<CraftingSlots> craftingSlotsResult = results.GetResult<CraftingSlots>("crafting");
 
             string resp = Json.Serialize(new EarthApiResponse(CraftingSlotModelToResponse(craftingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, craftingSlotsResult.Version), new EarthApiResponse.UpdatesResponse(results)));
             return Content(resp, "application/json");
@@ -696,10 +696,10 @@ public class WorkshopRouter : ControllerBase
                     EarthDB.Query query = new EarthDB.Query(true);
                     query.Get("smelting", playerId, typeof(SmeltingSlots));
 
-                    var smeltingSlots = (SmeltingSlots)results1.Get("smelting").Value;
+                    var smeltingSlots = results1.Get<SmeltingSlots>("smelting");
                     SmeltingSlot smeltingSlot = smeltingSlots.Slots[slotIndex - 1];
-                    var inventory = (Inventory)results1.Get("inventory").Value;
-                    var journal = (Journal)results1.Get("journal").Value;
+                    var inventory = results1.Get<Inventory>("inventory");
+                    var journal = results1.Get<Journal>("journal");
 
                     if (smeltingSlot.ActiveJob is null)
                         return query;
@@ -744,7 +744,7 @@ public class WorkshopRouter : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult = results.Get<SmeltingSlots>("smelting");
+            EarthDB.Results.Result<SmeltingSlots> smeltingSlotsResult = results.GetResult<SmeltingSlots>("smelting");
 
             string resp = Json.Serialize(new EarthApiResponse(SmeltingSlotModelToResponse(smeltingSlotsResult.Value.Slots[slotIndex - 1], requestStartedOn, smeltingSlotsResult.Version), new EarthApiResponse.UpdatesResponse(results)));
             return Content(resp, "application/json");
@@ -779,9 +779,9 @@ public class WorkshopRouter : ControllerBase
                     EarthDB.Query query = new EarthDB.Query(true);
                     query.Get("profile", playerId, typeof(Profile));
 
-                    var craftingSlots = (CraftingSlots)results1.Get("crafting").Value;
+                    var craftingSlots = results1.Get<CraftingSlots>("crafting");
                     CraftingSlot craftingSlot = craftingSlots.Slots[slotIndex - 1];
-                    var profile = (Profile)results1.Get("profile").Value;
+                    var profile = results1.Get<Profile>("profile");
 
                     if (craftingSlot.ActiveJob is null)
                         return query;
@@ -810,7 +810,7 @@ public class WorkshopRouter : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            Profile profile = (Profile)results.Get("profile").Value;
+            Profile profile = results.Get<Profile>("profile");
 
             string resp = Json.Serialize(new EarthApiResponse(new SplitRubies(profile.Rubies.Purchased, profile.Rubies.Earned), new EarthApiResponse.UpdatesResponse(results)));
             return Content(resp, "application/json");
@@ -845,9 +845,9 @@ public class WorkshopRouter : ControllerBase
                     EarthDB.Query query = new EarthDB.Query(true);
                     query.Get("profile", playerId, typeof(Profile));
 
-                    var smeltingSlots = (SmeltingSlots)results1.Get("smelting").Value;
+                    var smeltingSlots = results1.Get<SmeltingSlots>("smelting");
                     SmeltingSlot smeltingSlot = smeltingSlots.Slots[slotIndex - 1];
-                    var profile = (Profile)results1.Get("profile").Value;
+                    var profile = results1.Get<Profile>("profile");
 
                     if (smeltingSlot.ActiveJob is null)
                         return query;
@@ -877,7 +877,7 @@ public class WorkshopRouter : ControllerBase
                 })
                 .ExecuteAsync(earthDB, cancellationToken);
 
-            Profile profile = (Profile)results.Get("profile").Value;
+            Profile profile = results.Get<Profile>("profile");
 
             string resp = Json.Serialize(new EarthApiResponse(new SplitRubies(profile.Rubies.Purchased, profile.Rubies.Earned), new EarthApiResponse.UpdatesResponse(results)));
             return Content(resp, "application/json");
@@ -960,9 +960,9 @@ public class WorkshopRouter : ControllerBase
                 {
                     EarthDB.Query query = new EarthDB.Query(true);
 
-                    CraftingSlots craftingSlots = (CraftingSlots)results1.Get("crafting").Value;
+                    CraftingSlots craftingSlots = results1.Get<CraftingSlots>("crafting");
                     CraftingSlot craftingSlot = craftingSlots.Slots[slotIndex - 1];
-                    Profile profile = (Profile)results1.Get("profile").Value;
+                    Profile profile = results1.Get<Profile>("profile");
 
                     if (!craftingSlot.Locked)
                         return query;
@@ -1012,9 +1012,9 @@ public class WorkshopRouter : ControllerBase
                 {
                     EarthDB.Query query = new EarthDB.Query(true);
 
-                    SmeltingSlots smeltingSlots = (SmeltingSlots)results1.Get("smelting").Value;
+                    SmeltingSlots smeltingSlots = results1.Get<SmeltingSlots>("smelting");
                     SmeltingSlot smeltingSlot = smeltingSlots.Slots[slotIndex - 1];
-                    Profile profile = (Profile)results1.Get("profile").Value;
+                    Profile profile = results1.Get<Profile>("profile");
 
                     if (!smeltingSlot.Locked)
                         return query;

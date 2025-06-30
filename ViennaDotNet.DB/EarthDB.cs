@@ -584,15 +584,21 @@ public sealed class EarthDB : IDisposable
             // empty
         }
 
-        public Result Get(string name)
+        public Result GetResult(string name)
             => !getValues.TryGetValue(name, out Result? value) || value is null
             ? throw new KeyNotFoundException($"Key '{name}' was not found.")
             : value;
 
-        public Result<T> Get<T>(string name)
+        public Result<T> GetResult<T>(string name)
             => !getValues.TryGetValue(name, out Result? value) || value is null
                 ? throw new KeyNotFoundException()
                 : new Result<T>((T)value.Value, value.Version);
+
+        public object Get(string name)
+            => GetResult(name).Value;
+
+        public T Get<T>(string name)
+            => GetResult<T>(name).Value;
 
         public Dictionary<string, int?> GetUpdates()
             => new Dictionary<string, int?>(updates);
@@ -604,7 +610,7 @@ public sealed class EarthDB : IDisposable
 
         public record Result(object Value, int Version);
 
-        public record Result<T>(T Value, int Version);
+        public record struct Result<T>(T Value, int Version);
     }
 
     public class ObjectResults

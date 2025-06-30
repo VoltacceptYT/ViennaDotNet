@@ -202,7 +202,7 @@ public sealed class BuildplateInstanceRequestHandler
         EarthDB.Results results = await new EarthDB.Query(false)
             .Get("buildplates", playerId, typeof(Buildplates))
             .ExecuteAsync(_earthDB);
-        Buildplates buildplates = (Buildplates)results.Get("buildplates").Value;
+        Buildplates buildplates = results.Get<Buildplates>("buildplates");
 
         Buildplates.Buildplate? buildplate = buildplates.GetBuildplate(buildplateId);
         if (buildplate is null)
@@ -225,7 +225,7 @@ public sealed class BuildplateInstanceRequestHandler
         EarthDB.Results results = await new EarthDB.Query(false)
             .Get("sharedBuildplates", "", typeof(SharedBuildplates))
             .ExecuteAsync(_earthDB);
-        SharedBuildplates sharedBuildplates = (SharedBuildplates)results.Get("sharedBuildplates").Value;
+        SharedBuildplates sharedBuildplates = results.Get<SharedBuildplates>("sharedBuildplates");
 
         SharedBuildplates.SharedBuildplate? sharedBuildplate = sharedBuildplates.GetSharedBuildplate(sharedBuildplateId);
         if (sharedBuildplate is null)
@@ -250,7 +250,7 @@ public sealed class BuildplateInstanceRequestHandler
         EarthDB.Results results = await new EarthDB.Query(false)
             .Get("encounterBuildplates", "", typeof(EncounterBuildplates))
             .ExecuteAsync(_earthDB);
-        EncounterBuildplates encounterBuildplates = (EncounterBuildplates)results.Get("encounterBuildplates").Value;
+        EncounterBuildplates encounterBuildplates = results.Get<EncounterBuildplates>("encounterBuildplates");
 
         EncounterBuildplates.EncounterBuildplate? encounterBuildplate = encounterBuildplates.GetEncounterBuildplate(encounterBuildplateId);
         if (encounterBuildplate is null)
@@ -301,7 +301,7 @@ public sealed class BuildplateInstanceRequestHandler
         EarthDB.Results results = await new EarthDB.Query(false)
             .Get("buildplates", playerId, typeof(Buildplates))
             .ExecuteAsync(_earthDB);
-        Buildplates.Buildplate? buildplateUnsafeForPreviewGenerator = ((Buildplates)results.Get("buildplates").Value).GetBuildplate(buildplateId);
+        Buildplates.Buildplate? buildplateUnsafeForPreviewGenerator = results.Get<Buildplates>("buildplates").GetBuildplate(buildplateId);
         if (buildplateUnsafeForPreviewGenerator is null)
             return false;
 
@@ -332,7 +332,7 @@ public sealed class BuildplateInstanceRequestHandler
                 .Get("buildplates", playerId, typeof(Buildplates))
                 .Then(results2 =>
                 {
-                    Buildplates buildplates = (Buildplates)results2.Get("buildplates").Value;
+                    Buildplates buildplates = results2.Get<Buildplates>("buildplates");
                     Buildplates.Buildplate? buildplate = buildplates.GetBuildplate(buildplateId);
                     if (buildplate is not null)
                     {
@@ -429,8 +429,8 @@ public sealed class BuildplateInstanceRequestHandler
                         .Get("hotbar", playerConnectedRequest.Uuid, typeof(Hotbar))
                         .ExecuteAsync(_earthDB);
 
-                    Inventory inventory = (Inventory)results.Get("inventory").Value;
-                    Hotbar hotbar = (Hotbar)results.Get("hotbar").Value;
+                    Inventory inventory = results.Get<Inventory>("inventory");
+                    Hotbar hotbar = results.Get<Hotbar>("hotbar");
 
                     initialInventoryContents = new InventoryResponse(
                         [.. Enumerable.Concat(
@@ -451,7 +451,7 @@ public sealed class BuildplateInstanceRequestHandler
                     EarthDB.Results results = await new EarthDB.Query(false)
                         .Get("sharedBuildplates", "", typeof(SharedBuildplates))
                         .ExecuteAsync(_earthDB);
-                    SharedBuildplates sharedBuildplates = (SharedBuildplates)results.Get("sharedBuildplates").Value;
+                    SharedBuildplates sharedBuildplates = results.Get<SharedBuildplates>("sharedBuildplates");
                     SharedBuildplates.SharedBuildplate? sharedBuildplate = sharedBuildplates.GetSharedBuildplate(instanceInfo.BuildplateId);
                     if (sharedBuildplate is null)
                     {
@@ -491,8 +491,8 @@ public sealed class BuildplateInstanceRequestHandler
                         .Get("hotbar", playerConnectedRequest.Uuid, typeof(Hotbar))
                         .Then(results1 =>
                         {
-                            Inventory inventory = (Inventory)results1.Get("inventory").Value;
-                            Hotbar hotbar = (Hotbar)results1.Get("hotbar").Value;
+                            Inventory inventory = results1.Get<Inventory>("inventory");
+                            Hotbar hotbar = results1.Get<Hotbar>("hotbar");
 
                             var inventoryResponseHotbar = new InventoryResponse.HotbarItem[7];
                             Dictionary<string, int?> inventoryResponseStackableItems = [];
@@ -577,8 +577,8 @@ public sealed class BuildplateInstanceRequestHandler
                 .Get("journal", playerDisconnectedRequest.PlayerId, typeof(Journal))
                 .Then(results1 =>
                 {
-                    Inventory inventory = (Inventory)results1.Get("inventory").Value;
-                    Journal journal = (Journal)results1.Get("journal").Value;
+                    Inventory inventory = results1.Get<Inventory>("inventory");
+                    Journal journal = results1.Get<Journal>("journal");
 
                     LinkedList<string> unlockedJournalItems = [];
                     foreach (InventoryResponse.Item item in backpackContents.Items)
@@ -693,8 +693,8 @@ public sealed class BuildplateInstanceRequestHandler
                 .Get("profile", playerId, typeof(Profile))
                 .Get("boosts", playerId, typeof(Boosts))
                 .ExecuteAsync(_earthDB);
-            Profile profile = (Profile)results.Get("profile").Value;
-            Boosts boosts = (Boosts)results.Get("boosts").Value;
+            Profile profile = results.Get<Profile>("profile");
+            Boosts boosts = results.Get<Boosts>("boosts");
 
             float maxHealth = BoostUtils.GetMaxPlayerHealth(boosts, currentTime, _catalog.ItemsCatalog);
 
@@ -729,8 +729,8 @@ public sealed class BuildplateInstanceRequestHandler
             .Get("inventory", requestedInventoryPlayerId, typeof(Inventory))
             .Get("hotbar", requestedInventoryPlayerId, typeof(Hotbar))
             .ExecuteAsync(_earthDB);
-        Inventory inventory = (Inventory)results.Get("inventory").Value;
-        Hotbar hotbar = (Hotbar)results.Get("hotbar").Value;
+        Inventory inventory = results.Get<Inventory>("inventory");
+        Hotbar hotbar = results.Get<Hotbar>("hotbar");
 
         return new InventoryResponse(
             [.. Enumerable.Concat(
@@ -757,8 +757,8 @@ public sealed class BuildplateInstanceRequestHandler
             .Get("journal", inventoryAddItemMessage.PlayerId, typeof(Journal))
             .Then(results1 =>
             {
-                Inventory inventory = (Inventory)results1.Get("inventory").Value;
-                Journal journal = (Journal)results1.Get("journal").Value;
+                Inventory inventory = results1.Get<Inventory>("inventory");
+                Journal journal = results1.Get<Journal>("journal");
 
                 if (catalogItem.Stackable)
                 {
@@ -801,8 +801,8 @@ public sealed class BuildplateInstanceRequestHandler
             .Get("hotbar", inventoryRemoveItemRequest.PlayerId, typeof(Hotbar))
             .Then(results1 =>
             {
-                Inventory inventory = (Inventory)results1.Get("inventory").Value;
-                Hotbar hotbar = (Hotbar)results1.Get("hotbar").Value;
+                Inventory inventory = results1.Get<Inventory>("inventory");
+                Hotbar hotbar = results1.Get<Hotbar>("hotbar");
 
                 object result;
                 if (inventoryRemoveItemRequest.InstanceId is not null)
@@ -854,7 +854,7 @@ public sealed class BuildplateInstanceRequestHandler
             .Get("inventory", inventoryUpdateItemWearMessage.PlayerId, typeof(Inventory))
             .Then(results1 =>
             {
-                Inventory inventory = (Inventory)results1.Get("inventory").Value;
+                Inventory inventory = results1.Get<Inventory>("inventory");
 
                 NonStackableItemInstance? nonStackableItemInstance = inventory.GetItemInstance(inventoryUpdateItemWearMessage.ItemId, inventoryUpdateItemWearMessage.InstanceId);
                 if (nonStackableItemInstance is not null)
@@ -883,7 +883,7 @@ public sealed class BuildplateInstanceRequestHandler
             .Get("inventory", inventorySetHotbarMessage.PlayerId, typeof(Inventory))
             .Then(results1 =>
             {
-                Inventory inventory = (Inventory)results1.Get("inventory").Value;
+                Inventory inventory = results1.Get<Inventory>("inventory");
 
                 Hotbar hotbar = new Hotbar();
                 for (int index = 0; index < hotbar.Items.Length; index++)
