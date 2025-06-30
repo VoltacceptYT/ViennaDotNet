@@ -69,7 +69,9 @@ public class ProfileController : ControllerBase
     {
         string? playerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(playerId))
+        {
             return BadRequest();
+        }
 
         try
         {

@@ -15,13 +15,15 @@ public class ResourcePackController : ControllerBase
     [HttpGet]
     public ContentResult Get()
     {
-        string resp = Json.Serialize(new EarthApiResponse(new ResourcePackResponse(
-            0,
-            [2020, 1214, 4],
-            "availableresourcepack/resourcepacks/dba38e59-091a-4826-b76a-a08d7de5a9e2-1301b0c257a311678123b9e7325d0d6c61db3c35",
-            "2020.1214.04",
-            "dba38e59-091a-4826-b76a-a08d7de5a9e2"
-        )));
+        string resp = Json.Serialize(new EarthApiResponse(new ResourcePackResponse[]{
+            new ResourcePackResponse(
+                0,
+                [2020, 1214, 4],
+                "availableresourcepack/resourcepacks/dba38e59-091a-4826-b76a-a08d7de5a9e2-1301b0c257a311678123b9e7325d0d6c61db3c35",
+                "2020.1214.04",
+                "dba38e59-091a-4826-b76a-a08d7de5a9e2"
+            )
+        }));
         return Content(resp, "application/json");
     }
 }
@@ -33,7 +35,7 @@ public class ResourcePackCdnController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        string resourcePackFilePath = @"./data/resourcepacks/vanilla.zip"; //resource packs are distributed as renamed zip files containing an MCpack
+        string resourcePackFilePath = @"./staticdata/resourcepacks/vanilla.zip"; //resource packs are distributed as renamed zip files containing an MCpack
 
         if (!System.IO.File.Exists(resourcePackFilePath))
         {

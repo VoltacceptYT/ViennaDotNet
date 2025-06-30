@@ -4,3 +4,5 @@ rewrite launcher
 admin panel - manage player inventory, stats, boosts, buildplates, ...
 Get rid of LinkedList
 get the rest of shop buidlplates - the ones in the weird format
+playfab
+use Guid instead of string

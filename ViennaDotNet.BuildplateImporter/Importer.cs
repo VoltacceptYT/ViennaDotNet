@@ -55,7 +55,7 @@ public sealed class Importer
         }
         catch (EarthDB.DatabaseException ex)
         {
-            _logger.Error($"Failed to get template buildplate: {ex}");
+            _logger.Error($"Failed to get template buildplate '{templateId}': {ex}");
             return null;
         }
 

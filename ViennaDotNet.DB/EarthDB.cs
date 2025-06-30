@@ -105,8 +105,10 @@ public sealed class EarthDB : IDisposable
         }
     }
 
-    public class Query
+    public sealed class Query
     {
+        public static Query Empty => new Query(false);
+
         private readonly bool _write;
         private readonly List<WriteObjectsEntry> writeObjects = [];
         private readonly LinkedList<BumpEntry> bumps = [];
@@ -122,7 +124,7 @@ public sealed class EarthDB : IDisposable
 
         private sealed record ExtrasEntry(string name, object value);
 
-        private sealed record ThenFunctionEntry(Func<Results, Query> function, bool replaceResults);
+        private sealed record ThenFunctionEntry(Func<Results, Task<Query>> function, bool replaceResults);
 
         public Query(bool write)
         {
@@ -164,7 +166,10 @@ public sealed class EarthDB : IDisposable
             return this;
         }
 
-        public Query Then(Func<Results, Query> function, bool replaceResults)
+        public Query Then(Func<Results, Task<Query>> function)
+            => Then(function, true);
+
+        public Query Then(Func<Results, Task<Query>> function, bool replaceResults)
         {
             thenFunctions.Add(new ThenFunctionEntry(function, replaceResults));
             return this;
@@ -172,6 +177,12 @@ public sealed class EarthDB : IDisposable
 
         public Query Then(Func<Results, Query> function)
             => Then(function, true);
+
+        public Query Then(Func<Results, Query> function, bool replaceResults)
+        {
+            thenFunctions.Add(new ThenFunctionEntry(results => Task.FromResult(function(results)), replaceResults));
+            return this;
+        }
 
         public Query Then(Query query, bool replaceResults)
             => Then(results => query, replaceResults);
@@ -341,7 +352,7 @@ public sealed class EarthDB : IDisposable
 
             foreach (var entry in thenFunctions)
             {
-                Query query = entry.function(results);
+                Query query = await entry.function(results);
                 Results innerResults = await query.ExecuteInternalAsync(transaction, write, updates, cancellationToken);
                 if (entry.replaceResults)
                 {
@@ -353,7 +364,7 @@ public sealed class EarthDB : IDisposable
         }
     }
 
-    public class ObjectQuery
+    public sealed class ObjectQuery
     {
         private readonly bool _write;
         private readonly List<WriteObjectsEntry> writeObjects = [];

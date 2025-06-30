@@ -2,27 +2,35 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using System.Diagnostics;
+using System.Security.Claims;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using ViennaDotNet.ApiServer.Exceptions;
 using ViennaDotNet.ApiServer.Types.Buildplates;
 using ViennaDotNet.ApiServer.Types.Shop;
 using ViennaDotNet.ApiServer.Utils;
+using ViennaDotNet.BuildplateImporter;
 using ViennaDotNet.Common;
 using ViennaDotNet.Common.Utils;
 using ViennaDotNet.DB;
+using ViennaDotNet.DB.Models.Player;
 using ViennaDotNet.ObjectStore.Client;
 using ViennaDotNet.StaticData;
+using Buildplates = ViennaDotNet.DB.Models.Player.Buildplates;
 
 namespace ViennaDotNet.ApiServer.Controllers;
 
 [Authorize]
 [ApiVersion("1.1")]
 [Route("1/api/v{version:apiVersion}/commerce")]
-public class ShopController : ControllerBase
+public class ShopController : ViennaControllerBase
 {
     private static Catalog catalog => Program.staticData.Catalog;
     private static EarthDB earthDB => Program.DB;
     private static ObjectStoreClient objectStoreClient => Program.objectStore;
+    private static Importer importer => Program.importer;
 
     private sealed record StoreItemInfoRequest(string Id, string StoreItemType, uint StreamVersion);
 
@@ -33,7 +41,7 @@ public class ShopController : ControllerBase
 
         if (request is null || request.Length == 0)
         {
-            return Content(Json.Serialize(new EarthApiResponse(Array.Empty<StoreItemInfo>())), "application/json");
+            return EarthJson(Array.Empty<StoreItemInfo>());
         }
 
         List<StoreItemInfo> result = new(request.Length);
@@ -97,6 +105,145 @@ public class ShopController : ControllerBase
             }
         }
 
-        return Content(Json.Serialize(new EarthApiResponse(result)), "application/json");
+        return EarthJson(result);
+    }
+
+    private sealed record PurchaseItemRequest(
+        int ExpectedPurchasePrice,
+        Guid ItemId
+    );
+
+    [HttpPost("purchase")]
+    public async Task<IActionResult> Purchase(CancellationToken cancellationToken)
+    {
+        string? playerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(playerId))
+        {
+            return BadRequest();
+        }
+
+        var request = await Request.Body.AsJsonAsync<PurchaseItemRequest>(cancellationToken);
+
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var rubies = await ProcessPurchase(playerId, request.ItemId, request.ExpectedPurchasePrice, cancellationToken);
+
+        if (rubies is not { } rubiesVal)
+        {
+            return BadRequest();
+        }
+
+        return EarthJson(rubiesVal.Purchased + rubiesVal.Earned);
+    }
+
+    [HttpPost("purchaseV2")]
+    public async Task<IActionResult> PurchaseV2(CancellationToken cancellationToken)
+    {
+        string? playerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(playerId))
+        {
+            return BadRequest();
+        }
+
+        var request = await Request.Body.AsJsonAsync<PurchaseItemRequest>(cancellationToken);
+
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var rubies = await ProcessPurchase(playerId, request.ItemId, request.ExpectedPurchasePrice, cancellationToken);
+
+        if (rubies is not { } rubiesVal)
+        {
+            return BadRequest();
+        }
+
+        return EarthJson(new Types.Profile.SplitRubies(rubiesVal.Purchased, rubiesVal.Earned));
+    }
+
+    private static async Task<(int Purchased, int Earned)?> ProcessPurchase(string playerId, Guid itemId, int expectedPurchasePrice, CancellationToken cancellationToken)
+    {
+        // TODO: when playfab is implemented, validate expectedPurchasePrice (price is stored in playfab)
+        if (!catalog.ShopCatalog.Items.TryGetValue(itemId, out var itemToPurchase))
+        {
+            Log.Warning($"Player {playerId} tried to purchase unknown item '{itemId}'");
+            return null;
+        }
+
+        try
+        {
+            var results = await new EarthDB.Query(true)
+                .Get("profile", playerId, typeof(Profile))
+                .Get("inventory", playerId, typeof(Inventory))
+                .Get("buildplates", playerId, typeof(Buildplates))
+                .Then(async results =>
+                {
+                    var profile = results.Get<Profile>("profile").Value;
+                    var inventory = results.Get<Inventory>("inventory").Value;
+                    var buildplates = results.Get<Buildplates>("buildplates").Value;
+
+                    if (profile.Rubies.Total < expectedPurchasePrice)
+                    {
+                        Log.Warning($"Player {playerId} tried to purchase item '{itemId}' but does not have enough rubies");
+                        return EarthDB.Query.Empty;
+                    }
+
+                    var query = new EarthDB.Query(true);
+
+                    switch (itemToPurchase.ItemType)
+                    {
+                        case Catalog.ShopCatalogR.StoreItemInfo.StoreItemType.Buildplates:
+                            {
+                                string? buidplateId = await importer.AddBuidplateToPlayer(itemToPurchase.Id.ToString(), playerId, cancellationToken);
+
+                                if (string.IsNullOrEmpty(buidplateId))
+                                {
+                                    Log.Warning($"Failed to add buildplate {itemToPurchase.Id} to player {playerId}");
+                                    return query;
+                                }
+                            }
+
+                            break;
+                        case Catalog.ShopCatalogR.StoreItemInfo.StoreItemType.Items:
+                            {
+                                if (itemToPurchase.ItemCounts is not { Count: > 0 })
+                                {
+                                    return query;
+                                }
+
+                                foreach (var item in itemToPurchase.ItemCounts)
+                                {
+                                    inventory.AddItems(item.Key.ToString(), item.Value);
+                                }
+
+                                query.Update("inventory", playerId, inventory);
+                            }
+
+                            break;
+
+                        default:
+                            Log.Warning($"Shop item '{itemId}' has unknown {nameof(Catalog.ShopCatalogR.StoreItemInfo.StoreItemType)}");
+                            break;
+                    }
+
+                    bool spent = !profile.Rubies.Spend(expectedPurchasePrice);
+                    Debug.Assert(spent);
+
+                    query.Update("profile", playerId, profile);
+
+                    return query;
+                })
+                .ExecuteAsync(earthDB, cancellationToken);
+        }
+        catch (EarthDB.DatabaseException ex)
+        {
+            throw new ServerErrorException(ex);
+        }
+
+        return (0, 0);
     }
 }

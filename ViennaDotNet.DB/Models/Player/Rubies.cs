@@ -1,15 +1,22 @@
-﻿namespace ViennaDotNet.DB.Models.Player;
+﻿using System.Diagnostics;
+using System.Text.Json.Serialization;
+
+namespace ViennaDotNet.DB.Models.Player;
 
 public sealed class Rubies
 {
-    public int Purchased { get; set; }
-    public int Earned { get; set; }
-
     public Rubies()
     {
         Purchased = 0;
         Earned = 0;
     }
+
+    public int Purchased { get; set; }
+
+    public int Earned { get; set; }
+
+    [JsonIgnore]
+    public int Total => Purchased + Earned;
 
     /// <summary>
     /// Tries to spend <paramref name="amount"/> rubies
@@ -19,7 +26,7 @@ public sealed class Rubies
     /// <exception cref="InvalidOperationException"></exception>
     public bool Spend(int amount)
     {
-        if (amount > Purchased + Earned)
+        if (amount > Total)
         {
             return false;
         }
@@ -43,7 +50,7 @@ public sealed class Rubies
 
         if (Purchased < 0 || Earned < 0)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableException();
         }
 
         return true;

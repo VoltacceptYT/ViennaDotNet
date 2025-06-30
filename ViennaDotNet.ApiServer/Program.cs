@@ -26,6 +26,7 @@ public static class Program
     internal static ObjectStoreClient objectStore;
     internal static TappablesManager tappablesManager;
     internal static BuildplateInstancesManager buildplateInstancesManager;
+    internal static Importer importer;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     private sealed class Options
@@ -60,7 +61,7 @@ public static class Program
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
-            .MinimumLevel.Override("ProjectEarthServerAPI.Authentication", LogEventLevel.Information)
+            .MinimumLevel.Override("ViennaDotNet.ApiServer.Authentication", LogEventLevel.Information)
             .CreateLogger();
         /*var log = new LoggerConfiguration()
             .WriteTo.Console()
@@ -169,10 +170,9 @@ public static class Program
             Log.Error($"Failed to get current shop buildplates: {ex}");
         }
 
+        importer = new Importer(DB, eventBus, objectStore, Log.Logger);
         if (currentShopBuildplates is not null)
         {
-            Importer importer = new Importer(DB, eventBus, objectStore, Log.Logger);
-
             foreach (var buidplate in staticData.Buildplates.ShopBuildplates)
             {
                 if (currentShopBuildplates.GetBuildplate(buidplate.Id) is not null)
